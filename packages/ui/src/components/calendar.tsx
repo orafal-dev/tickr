@@ -1,13 +1,14 @@
 "use client";
 
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsUpDownIcon,
-} from "lucide-react";
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  UnfoldMoreIcon,
+} from "@hugeicons/core-free-icons";
 import type * as React from "react";
 import { DayPicker } from "react-day-picker";
 import { cn } from "@workspace/ui/lib/utils";
+import { UiIcon } from "@workspace/ui/components/ui-icon";
 
 const buttonClassNames =
   "relative flex size-(--cell-size) text-base sm:text-sm items-center justify-center rounded-lg text-foreground not-in-data-selected:hover:bg-accent disabled:pointer-events-none disabled:opacity-64 [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0";
@@ -81,29 +82,32 @@ export function Calendar({
     }): React.ReactElement => {
       if (orientation === "left") {
         return (
-          <ChevronLeftIcon
+          <UiIcon
+            aria-hidden
             className={cn(className, "rtl:rotate-180")}
+            icon={ArrowLeft01Icon}
             {...props}
-            aria-hidden="true"
           />
         );
       }
 
       if (orientation === "right") {
         return (
-          <ChevronRightIcon
+          <UiIcon
+            aria-hidden
             className={cn(className, "rtl:rotate-180")}
+            icon={ArrowRight01Icon}
             {...props}
-            aria-hidden="true"
           />
         );
       }
 
       return (
-        <ChevronsUpDownIcon
+        <UiIcon
+          aria-hidden
           className={className}
+          icon={UnfoldMoreIcon}
           {...props}
-          aria-hidden="true"
         />
       );
     },

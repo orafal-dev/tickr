@@ -2,9 +2,10 @@
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { ChevronRight, MoreHorizontal } from "lucide-react";
+import { ArrowRight01Icon, MoreHorizontalIcon } from "@hugeicons/core-free-icons";
 import type * as React from "react";
 import { cn } from "@workspace/ui/lib/utils";
+import { UiIcon } from "@workspace/ui/components/ui-icon";
 
 export function Breadcrumb({
   ...props
@@ -85,7 +86,9 @@ export function BreadcrumbSeparator({
       role="presentation"
       {...props}
     >
-      {children ?? <ChevronRight />}
+      {children ?? (
+        <UiIcon aria-hidden className="rtl:rotate-180" icon={ArrowRight01Icon} />
+      )}
     </li>
   );
 }
@@ -102,7 +105,7 @@ export function BreadcrumbEllipsis({
       role="presentation"
       {...props}
     >
-      <MoreHorizontal className="size-4" />
+      <UiIcon aria-hidden className="size-4" icon={MoreHorizontalIcon} />
       <span className="sr-only">More</span>
     </span>
   );

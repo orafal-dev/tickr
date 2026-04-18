@@ -2,23 +2,27 @@
 
 import { Toast } from "@base-ui/react/toast";
 import {
-  CircleAlertIcon,
-  CircleCheckIcon,
-  InfoIcon,
-  LoaderCircleIcon,
-  TriangleAlertIcon,
-} from "lucide-react";
+  Alert02Icon,
+  AlertCircleIcon,
+  CheckmarkCircle02Icon,
+  InformationCircleIcon,
+  Loading03Icon,
+} from "@hugeicons/core-free-icons";
+import type { IconSvgElement } from "@hugeicons/react";
 import type React from "react";
 import { cn } from "@workspace/ui/lib/utils";
 import { buttonVariants } from "./button.variants";
+import { UiIcon } from "@workspace/ui/components/ui-icon";
 
 const TOAST_ICONS = {
-  error: CircleAlertIcon,
-  info: InfoIcon,
-  loading: LoaderCircleIcon,
-  success: CircleCheckIcon,
-  warning: TriangleAlertIcon,
-} as const;
+  error: AlertCircleIcon,
+  info: InformationCircleIcon,
+  loading: Loading03Icon,
+  success: CheckmarkCircle02Icon,
+  warning: Alert02Icon,
+} as const satisfies Record<string, IconSvgElement>;
+
+type ToastVisualType = keyof typeof TOAST_ICONS;
 
 type SwipeDirection = "up" | "down" | "left" | "right";
 
@@ -72,8 +76,8 @@ function Toasts({ position }: { position: ToastPosition }): React.ReactElement {
         data-slot="toast-viewport"
       >
         {toasts.map((toast) => {
-          const Icon = toast.type
-            ? TOAST_ICONS[toast.type as keyof typeof TOAST_ICONS]
+          const toastIcon = toast.type
+            ? TOAST_ICONS[toast.type as ToastVisualType]
             : null;
 
           return (
@@ -127,12 +131,15 @@ function Toasts({ position }: { position: ToastPosition }): React.ReactElement {
             >
               <Toast.Content className="pointer-events-auto flex items-center justify-between gap-1.5 overflow-hidden px-3.5 py-3 text-sm transition-opacity duration-250 data-behind:not-data-expanded:pointer-events-none data-behind:opacity-0 data-expanded:opacity-100">
                 <div className="flex gap-2">
-                  {Icon && (
+                  {toastIcon && (
                     <div
                       className="[&>svg]:h-lh [&>svg]:w-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
                       data-slot="toast-icon"
                     >
-                      <Icon className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" />
+                      <UiIcon
+                        className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80"
+                        icon={toastIcon}
+                      />
                     </div>
                   )}
 
@@ -174,8 +181,8 @@ function AnchoredToasts(): React.ReactElement {
         data-slot="toast-viewport-anchored"
       >
         {toasts.map((toast) => {
-          const Icon = toast.type
-            ? TOAST_ICONS[toast.type as keyof typeof TOAST_ICONS]
+          const toastIcon = toast.type
+            ? TOAST_ICONS[toast.type as ToastVisualType]
             : null;
           const tooltipStyle =
             (toast.data as { tooltipStyle?: boolean })?.tooltipStyle ?? false;
@@ -211,12 +218,15 @@ function AnchoredToasts(): React.ReactElement {
                 ) : (
                   <Toast.Content className="pointer-events-auto flex items-center justify-between gap-1.5 overflow-hidden px-3.5 py-3 text-sm">
                     <div className="flex gap-2">
-                      {Icon && (
+                      {toastIcon && (
                         <div
                           className="[&>svg]:h-lh [&>svg]:w-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
                           data-slot="toast-icon"
                         >
-                          <Icon className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" />
+                          <UiIcon
+                            className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80"
+                            icon={toastIcon}
+                          />
                         </div>
                       )}
 

@@ -3,7 +3,7 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { PanelLeftIcon } from "lucide-react";
+import { SidebarLeftIcon } from "@hugeicons/core-free-icons";
 import * as React from "react";
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query";
 import { cn } from "@workspace/ui/lib/utils";
@@ -19,6 +19,7 @@ import {
   SheetTitle,
 } from "@workspace/ui/components/sheet";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { UiIcon } from "@workspace/ui/components/ui-icon";
 import {
   Tooltip,
   TooltipPopup,
@@ -299,7 +300,7 @@ export function SidebarTrigger({
       variant="ghost"
       {...props}
     >
-      <PanelLeftIcon />
+      <UiIcon aria-hidden icon={SidebarLeftIcon} />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

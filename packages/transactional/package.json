@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./emails/email-verification": "./emails/email-verification.tsx",
     "./emails/organization-invitation": "./emails/organization-invitation.tsx"
   },
   "scripts": {

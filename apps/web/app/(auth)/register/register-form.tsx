@@ -46,6 +46,7 @@ export const RegisterForm = () => {
         name: parsed.data.name,
         email: parsed.data.email,
         password: parsed.data.password,
+        callbackURL: postAuthRedirect,
       });
       if (result.error) {
         setFormError(result.error.message ?? "Unable to register.");

@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { LoginResendVerification } from "@/app/(auth)/login/login-resend-verification";
 import { authClient } from "@/lib/auth-client";
 import { ORGANIZATION_ONBOARDING_PATH } from "@/lib/onboarding-constants";
 import { resolveSafeInternalPath } from "@/lib/safe-internal-path";
@@ -30,10 +31,14 @@ export const LoginForm = () => {
   >({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showEmailUnverifiedHelp, setShowEmailUnverifiedHelp] = useState(false);
+  const [resendEmail, setResendEmail] = useState<string | null>(null);
 
   const handleFormSubmit = async (values: Record<string, unknown>) => {
     setFieldErrors({});
     setFormError(null);
+    setShowEmailUnverifiedHelp(false);
+    setResendEmail(null);
     const parsed = loginFormSchema.safeParse(values);
     if (!parsed.success) {
       setFieldErrors(fieldErrorsFromZodError(parsed.error));
@@ -47,7 +52,17 @@ export const LoginForm = () => {
         password: parsed.data.password,
       });
       if (result.error) {
-        setFormError(result.error.message ?? "Unable to sign in.");
+        const message = result.error.message ?? "Unable to sign in.";
+        setFormError(message);
+        const code =
+          "code" in result.error
+            ? String((result.error as { code?: string }).code ?? "")
+            : "";
+        const looksUnverified =
+          code === "EMAIL_NOT_VERIFIED" ||
+          message.toLowerCase().includes("verify");
+        setShowEmailUnverifiedHelp(looksUnverified);
+        setResendEmail(looksUnverified ? parsed.data.email : null);
         return;
       }
       let destination = postAuthRedirect;
@@ -109,6 +124,18 @@ export const LoginForm = () => {
         <p className="text-destructive text-sm" id="login-error" role="alert">
           {formError}
         </p>
+      ) : null}
+      {showEmailUnverifiedHelp && resendEmail ? (
+        <div className="flex flex-col gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
+          <p className="text-sm leading-relaxed text-amber-950 dark:text-amber-100">
+            Confirm your email using the link we sent when you registered. After
+            you confirm, sign in again here.
+          </p>
+          <LoginResendVerification
+            callbackURL={postAuthRedirect}
+            email={resendEmail}
+          />
+        </div>
       ) : null}
       <Button className="w-full" loading={isSubmitting} type="submit">
         Sign in

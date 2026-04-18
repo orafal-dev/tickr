@@ -3,12 +3,13 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
   MoreHorizontalIcon,
-} from "lucide-react";
+} from "@hugeicons/core-free-icons";
 import type * as React from "react";
 import { cn } from "@workspace/ui/lib/utils";
+import { UiIcon } from "@workspace/ui/components/ui-icon";
 import { type Button } from "@workspace/ui/components/button";
 import { buttonVariants } from "./button.variants";
 
@@ -90,7 +91,11 @@ export function PaginationPrevious({
       size="default"
       {...props}
     >
-      <ChevronLeftIcon className="sm:-ms-1" />
+      <UiIcon
+        aria-hidden
+        className="sm:-ms-1 rtl:rotate-180"
+        icon={ArrowLeft01Icon}
+      />
       <span className="max-sm:hidden">Previous</span>
     </PaginationLink>
   );
@@ -108,7 +113,11 @@ export function PaginationNext({
       {...props}
     >
       <span className="max-sm:hidden">Next</span>
-      <ChevronRightIcon className="sm:-me-1" />
+      <UiIcon
+        aria-hidden
+        className="sm:-me-1 rtl:rotate-180"
+        icon={ArrowRight01Icon}
+      />
     </PaginationLink>
   );
 }
@@ -124,7 +133,11 @@ export function PaginationEllipsis({
       data-slot="pagination-ellipsis"
       {...props}
     >
-      <MoreHorizontalIcon className="size-5 sm:size-4" />
+      <UiIcon
+        aria-hidden
+        className="size-5 sm:size-4"
+        icon={MoreHorizontalIcon}
+      />
       <span className="sr-only">More pages</span>
     </span>
   );

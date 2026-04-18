@@ -1,9 +1,10 @@
 "use client";
 
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
-import { ChevronDownIcon } from "lucide-react";
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import type React from "react";
 import { cn } from "@workspace/ui/lib/utils";
+import { UiIcon } from "@workspace/ui/components/ui-icon";
 
 export function Accordion(
   props: AccordionPrimitive.Root.Props,
@@ -40,9 +41,10 @@ export function AccordionTrigger({
         {...props}
       >
         {children}
-        <ChevronDownIcon
+        <UiIcon
           className="pointer-events-none size-4 shrink-0 translate-y-0.5 opacity-80 transition-transform duration-200 ease-in-out"
           data-slot="accordion-indicator"
+          icon={ArrowDown01Icon}
         />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>

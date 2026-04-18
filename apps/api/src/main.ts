@@ -1,6 +1,12 @@
+import { config } from 'dotenv';
+import { join } from 'node:path';
+
 import { NestFactory } from '@nestjs/core';
 import { z } from 'zod';
+
 import { AppModule } from './app.module';
+
+config({ path: join(__dirname, '..', '.env') });
 
 /** Default when neither API_PORT nor PORT is set (avoids colliding with Next.js on 3000). */
 const DEFAULT_PORT = 3001;

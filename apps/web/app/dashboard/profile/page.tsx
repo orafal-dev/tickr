@@ -1,0 +1,55 @@
+import Link from "next/link";
+
+import { ProfileResendVerification } from "@/app/dashboard/profile/profile-resend-verification";
+import { getSession } from "@/lib/auth";
+import { buttonVariants } from "@workspace/ui/components/button.variants";
+import { cn } from "@workspace/ui/lib/utils";
+
+export default async function ProfilePage() {
+  const session = await getSession();
+  if (!session) {
+    return null;
+  }
+
+  const emailVerified = Boolean(session.user.emailVerified);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-1">
+        <h1 className="font-heading text-2xl font-medium">Profile</h1>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Account details and email confirmation.
+        </p>
+      </div>
+      <div className="border-border flex flex-col gap-3 rounded-lg border p-4">
+        <div className="flex flex-col gap-1">
+          <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+            Email
+          </span>
+          <span className="text-sm">{session.user.email}</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+            Verification
+          </span>
+          <span className="text-sm">
+            {emailVerified ? (
+              <span className="text-emerald-600 dark:text-emerald-400">Confirmed</span>
+            ) : (
+              <span className="text-amber-600 dark:text-amber-400">Pending confirmation</span>
+            )}
+          </span>
+        </div>
+        {!emailVerified ? (
+          <ProfileResendVerification
+            callbackURL="/dashboard"
+            email={session.user.email}
+          />
+        ) : null}
+      </div>
+      <Link className={cn(buttonVariants({ variant: "outline" }), "w-fit")} href="/dashboard">
+        Back to dashboard
+      </Link>
+    </div>
+  );
+}

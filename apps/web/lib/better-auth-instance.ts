@@ -5,6 +5,8 @@ import { organization } from "better-auth/plugins";
 import { Pool } from "pg";
 import { z } from "zod";
 
+import { sendEmailVerificationMail } from "@/lib/email-verification-mail";
+import { resolvePublicEmailVerificationUrl } from "@/lib/email-verification-url";
 import { sendOrganizationInvitationMail } from "@/lib/organization-invitation-mail";
 
 const isNextProductionBuild =
@@ -91,8 +93,31 @@ export const auth = betterAuth({
   baseURL,
   secret: resolveAuthSecret(),
   database: pool,
+  rateLimit: {
+    enabled: true,
+    customRules: {
+      "/send-verification-email": {
+        window: 300,
+        max: 1,
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 3600 * 24,
+    sendVerificationEmail: async ({ user, url }) => {
+      const confirmUrl = resolvePublicEmailVerificationUrl(url);
+      await sendEmailVerificationMail({
+        to: user.email,
+        subject: "Confirm your email for Tickr",
+        confirmUrl,
+      });
+    },
   },
   plugins: [
     nextCookies(),

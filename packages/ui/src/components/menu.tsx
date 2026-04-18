@@ -1,9 +1,10 @@
 "use client";
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
-import { ChevronRightIcon } from "lucide-react";
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import type * as React from "react";
 import { cn } from "@workspace/ui/lib/utils";
+import { UiIcon } from "@workspace/ui/components/ui-icon";
 
 export const MenuCreateHandle: typeof MenuPrimitive.createHandle =
   MenuPrimitive.createHandle;
@@ -275,7 +276,11 @@ export function MenuSubTrigger({
       {...props}
     >
       {children}
-      <ChevronRightIcon className="ms-auto -me-0.5 opacity-80" />
+      <UiIcon
+        aria-hidden
+        className="ms-auto -me-0.5 opacity-80 rtl:rotate-180"
+        icon={ArrowRight01Icon}
+      />
     </MenuPrimitive.SubmenuTrigger>
   );
 }

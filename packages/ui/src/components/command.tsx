@@ -1,9 +1,10 @@
 "use client";
 
 import { Dialog as CommandDialogPrimitive } from "@base-ui/react/dialog";
-import { SearchIcon } from "lucide-react";
+import { Search01Icon } from "@hugeicons/core-free-icons";
 import type * as React from "react";
 import { cn } from "@workspace/ui/lib/utils";
+import { UiIcon } from "@workspace/ui/components/ui-icon";
 import {
   Autocomplete,
   AutocompleteCollection,
@@ -126,7 +127,7 @@ export function CommandInput({
         )}
         placeholder={placeholder}
         size="lg"
-        startAddon={<SearchIcon />}
+        startAddon={<UiIcon aria-hidden icon={Search01Icon} />}
         {...props}
       />
     </div>
