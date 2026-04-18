@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+Always default to tools official CLI. Always refer to latest online docs.
+
+Example:
+
+- Instead of raw creating files for NestJS app, use `nest new project-name`.

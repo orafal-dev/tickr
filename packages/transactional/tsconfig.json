@@ -1,0 +1,9 @@
+{
+  "extends": "@workspace/typescript-config/react-library.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "noEmit": true
+  },
+  "include": ["emails/**/*.tsx", "emails/**/*.ts"],
+  "exclude": ["node_modules", ".react-email", "out"]
+}

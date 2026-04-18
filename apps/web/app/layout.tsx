@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono, Source_Sans_3, Outfit } from "next/font/google"
+import { Geist_Mono, Source_Sans_3, Outfit } from "next/font/google"
 
 import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"

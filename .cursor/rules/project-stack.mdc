@@ -1,0 +1,42 @@
+---
+description: Tickr monorepo stack versions and where each technology lives
+alwaysApply: true
+---
+
+# Project stack
+
+Use these libraries and minimum major lines when adding features or dependencies. Prefer existing patterns in each app over introducing parallel stacks.
+
+## Next.js 16+ (`apps/web`)
+
+- App Router, React 19, and Turbopack dev (`next dev --turbopack`) are the defaults.
+- Co-locate route segments, Server Components by default, and Client Components only when hooks, browser APIs, or interactivity require `"use client"`.
+- Align with Next.js 16 docs for caching, `fetch`, and metadata APIs.
+
+## NestJS 11+ (`apps/api`)
+
+- Follow Nest module/controller/provider patterns and Nest 11 APIs.
+- Keep HTTP surface consistent with DTO validation and typed responses where the codebase already does so.
+
+## Tailwind CSS v4 (`packages/ui`, consuming apps)
+
+- Use Tailwind v4 setup: `tailwindcss` ^4, `@tailwindcss/postcss`, and `@import "tailwindcss"` (or project `globals.css` entry) — do not add legacy `tailwind.config.js` unless the repo already uses one for a package.
+- Style with utility classes; compose with `tailwind-merge` / CVA where components already do.
+
+## TanStack Query
+
+- Use **TanStack Query** (`@tanstack/react-query`) for server/async state: queries, mutations, cache keys, and invalidation. Prefer `QueryClientProvider` at the app boundary and typed query functions.
+- Do not replace Query with ad-hoc `useEffect` + `fetch` for data that should be cached or synchronized across the UI.
+
+## TanStack Hotkeys
+
+- Use **`@tanstack/react-hotkeys`** for keyboard shortcuts in React (Next) client code. Register scopes/groups consistently and avoid duplicate global listeners.
+- Pair shortcuts with accessible UI (buttons, menus, `aria-keyshortcuts` where appropriate) so behavior is not hotkey-only.
+
+## Monorepo layout
+
+- **Web**: `apps/web` — Next app, routes, app-specific wiring.
+- **API**: `apps/api` — NestJS backend.
+- **Shared UI**: `packages/ui` — components, Tailwind styles, shared hooks consumed by `web`.
+
+When a dependency version is ambiguous, match the range already declared in the relevant `package.json` and bump only when intentionally upgrading the stack.
