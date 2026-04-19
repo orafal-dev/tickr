@@ -10,7 +10,7 @@ import {
   TextItalicIcon,
 } from "@hugeicons/core-free-icons"
 import { deepEqual } from "fast-equals"
-import { useEffect, type ReactElement } from "react"
+import { useEffect, useLayoutEffect, useRef, type ReactElement } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { UiIcon } from "@workspace/ui/components/ui-icon"
@@ -153,6 +153,7 @@ export const RichTextEditor = ({
   className,
 }: RichTextEditorProps): ReactElement => {
   const normalizedValue = typeof value === "string" ? value : ""
+  const editorContentWrapRef = useRef<HTMLDivElement>(null)
 
   const editor = useEditor(
     {
@@ -164,7 +165,8 @@ export const RichTextEditor = ({
         attributes: {
           ...(id ? { id } : {}),
           class: cn(
-            "py-[calc(theme(spacing.1.5)-1px)] min-h-[8rem] w-full px-[calc(theme(spacing.3)-1px)] outline-none sm:min-h-32",
+            "box-border min-h-[5lh] w-full overflow-hidden py-[calc(theme(spacing.1.5)-1px)] leading-relaxed outline-none",
+            "px-[calc(theme(spacing.3)-1px)]",
             "[&_h2]:my-2 [&_h2]:text-base [&_h2]:font-semibold [&_p]:my-1",
             "[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5",
             "[&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5",
@@ -198,8 +200,59 @@ export const RichTextEditor = ({
     if (docsAreEqual(current, next)) {
       return
     }
+    const hadFocus = editor.isFocused
     editor.commands.setContent(next, { emitUpdate: false })
+    if (hadFocus) {
+      requestAnimationFrame(() => {
+        if (!editor.isDestroyed) {
+          editor.commands.focus()
+        }
+      })
+    }
   }, [normalizedValue, editor])
+
+  useLayoutEffect(() => {
+    if (!editor || editor.isDestroyed) {
+      return
+    }
+
+    const syncEditorHeight = () => {
+      const root =
+        editorContentWrapRef.current?.querySelector<HTMLElement>(".ProseMirror")
+      if (!root) {
+        return
+      }
+      root.style.height = "auto"
+      root.style.height = `${root.scrollHeight}px`
+    }
+
+    const wrap = editorContentWrapRef.current
+
+    syncEditorHeight()
+    editor.on("transaction", syncEditorHeight)
+
+    const resizeObserver =
+      wrap &&
+      new ResizeObserver(() => {
+        syncEditorHeight()
+      })
+    if (resizeObserver && wrap) {
+      resizeObserver.observe(wrap)
+    }
+
+    const handleWindowResize = () => {
+      syncEditorHeight()
+    }
+    window.addEventListener("resize", handleWindowResize)
+
+    return () => {
+      editor.off("transaction", syncEditorHeight)
+      resizeObserver?.disconnect()
+      window.removeEventListener("resize", handleWindowResize)
+      const root = wrap?.querySelector<HTMLElement>(".ProseMirror")
+      root?.style.removeProperty("height")
+    }
+  }, [editor])
 
   if (!editor) {
     return (
@@ -207,7 +260,7 @@ export const RichTextEditor = ({
         aria-busy="true"
         aria-label={ariaLabel ?? "Loading rich text editor"}
         className={cn(
-          "min-h-32 w-full rounded-lg border border-input bg-muted/20 sm:min-h-32",
+          "min-h-40 w-full rounded-lg border border-input bg-muted/20",
           className
         )}
       />
@@ -223,13 +276,12 @@ export const RichTextEditor = ({
       )}
     >
       <RichTextEditorToolbar disabled={disabled} editor={editor} />
-      <EditorContent
-        className={cn(
-          "[&_.ProseMirror]:min-h-[inherit]",
-          disabled && "pointer-events-none"
-        )}
-        editor={editor}
-      />
+      <div className="w-full min-w-0" ref={editorContentWrapRef}>
+        <EditorContent
+          className={cn(disabled && "pointer-events-none")}
+          editor={editor}
+        />
+      </div>
     </div>
   )
 }

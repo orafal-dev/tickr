@@ -1,10 +1,18 @@
 "use client"
 
+import { useDebouncedCallback } from "@tanstack/react-pacer"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 
+import { AutoSaveIndicator } from "@/components/auto-save-indicator"
 import { authClient } from "@/lib/auth-client"
 import {
   applyRecordToIssueListRow,
@@ -71,13 +79,49 @@ const formatPriorityLabel = (priority: string) => {
  * state is initialized from server JSON — avoids RichTextEditor mounting with
  * empty `value` before a parent `useEffect` could hydrate state.
  */
+const DOCUMENT_AUTOSAVE_MS = 700
+
+const computeIssueDocumentPatchBody = (
+  titleDraft: string,
+  descriptionDraft: unknown,
+  serverTitle: string,
+  serverDescriptionNormalized: string
+): Record<string, unknown> | null => {
+  const descriptionPayload =
+    typeof descriptionDraft === "string"
+      ? descriptionDraft
+      : stringifyStoredRichTextInput(descriptionDraft)
+  const titleTrim = titleDraft.trim()
+  const dirtyTitle = titleTrim !== serverTitle.trim()
+  const dirtyDesc = descriptionPayload !== serverDescriptionNormalized
+  if (!dirtyTitle && !dirtyDesc) {
+    return null
+  }
+
+  const body: Record<string, unknown> = {}
+  if (dirtyDesc) {
+    body.description = descriptionPayload
+  }
+  if (dirtyTitle) {
+    if (titleTrim.length > 0) {
+      body.title = titleTrim
+    } else if (!dirtyDesc) {
+      return null
+    }
+  }
+
+  if (Object.keys(body).length === 0) {
+    return null
+  }
+
+  return body
+}
+
 const IssueTitleDescriptionBlock = ({
   issue,
-  patchPending,
   onPatch,
 }: Readonly<{
   issue: IssueListRow
-  patchPending: boolean
   onPatch: (body: Record<string, unknown>) => void
 }>) => {
   const [title, setTitle] = useState(issue.title)
@@ -85,24 +129,75 @@ const IssueTitleDescriptionBlock = ({
     stringifyStoredRichTextInput(issue.description)
   )
 
+  const prevIssueIdRef = useRef<string | null>(null)
   useEffect(() => {
+    if (prevIssueIdRef.current === issue.id) {
+      return
+    }
+    prevIssueIdRef.current = issue.id
     setTitle(issue.title)
     setDescription(stringifyStoredRichTextInput(issue.description))
   }, [issue.description, issue.id, issue.title])
 
-  const handleSaveCore = () => {
-    const descriptionPayload =
-      typeof description === "string"
-        ? description
-        : stringifyStoredRichTextInput(description)
-    onPatch({
-      title: title.trim(),
-      description: descriptionPayload,
-    })
-  }
+  const savedDescription = useMemo(
+    () => stringifyStoredRichTextInput(issue.description),
+    [issue.description]
+  )
+
+  const titleDraftRef = useRef(title)
+  const descriptionDraftRef = useRef(description)
+  const serverTitleRef = useRef(issue.title)
+  const serverDescriptionRef = useRef(savedDescription)
+  const onPatchRef = useRef(onPatch)
+
+  const debouncedPatch = useDebouncedCallback(() => {
+    const body = computeIssueDocumentPatchBody(
+      titleDraftRef.current,
+      descriptionDraftRef.current,
+      serverTitleRef.current,
+      serverDescriptionRef.current
+    )
+    if (body) {
+      onPatchRef.current(body)
+    }
+  }, { wait: DOCUMENT_AUTOSAVE_MS })
+
+  useEffect(() => {
+    titleDraftRef.current = title
+    descriptionDraftRef.current = description
+    serverTitleRef.current = issue.title
+    serverDescriptionRef.current = savedDescription
+    onPatchRef.current = onPatch
+
+    const body = computeIssueDocumentPatchBody(
+      title,
+      description,
+      issue.title,
+      savedDescription
+    )
+    if (!body) {
+      return
+    }
+    debouncedPatch()
+  }, [debouncedPatch, description, issue.title, onPatch, savedDescription, title])
+
+  const descriptionPayload =
+    typeof description === "string"
+      ? description
+      : stringifyStoredRichTextInput(description)
+  const titleTrim = title.trim()
+  const dirtyTitle = titleTrim !== issue.title.trim()
+  const dirtyDesc = descriptionPayload !== savedDescription
+  const blockedEmptyTitle =
+    dirtyTitle && titleTrim.length === 0 && !dirtyDesc
 
   return (
     <div className="flex flex-col gap-3 lg:col-span-2">
+      {blockedEmptyTitle ? (
+        <p className="text-xs text-destructive" role="alert">
+          Add a title to save, or change the description to keep saving.
+        </p>
+      ) : null}
       <Field name="title">
         <FieldLabel>Title</FieldLabel>
         <Input
@@ -117,16 +212,10 @@ const IssueTitleDescriptionBlock = ({
         <FieldLabel>Description</FieldLabel>
         <RichTextEditor
           aria-label="Issue description"
-          disabled={patchPending}
           onChange={setDescription}
           value={description}
         />
       </Field>
-      <div>
-        <Button disabled={patchPending} onClick={handleSaveCore} type="button">
-          Save title & description
-        </Button>
-      </div>
     </div>
   )
 }
@@ -287,6 +376,13 @@ export const IssueDetail = () => {
     },
   })
 
+  const handlePatchIssue = useCallback(
+    (body: Record<string, unknown>) => {
+      patchIssueMutation.mutate(body)
+    },
+    [patchIssueMutation]
+  )
+
   const addCommentMutation = useMutation({
     mutationFn: async (bodyJson: string) => {
       return pmJson<CommentRow>(`/issues/${issueId}/comments`, {
@@ -434,7 +530,10 @@ export const IssueDetail = () => {
           ← Back to issues
         </Link>
         <p className="font-mono text-xs text-muted-foreground">{issueKey}</p>
-        <h1 className="font-heading text-2xl font-medium">{issue.title}</h1>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h1 className="font-heading text-2xl font-medium">{issue.title}</h1>
+          <AutoSaveIndicator savedAt={issue.updatedAt} />
+        </div>
       </div>
 
       <section
@@ -444,10 +543,7 @@ export const IssueDetail = () => {
         <IssueTitleDescriptionBlock
           issue={issue}
           key={issue.id}
-          onPatch={(body) => {
-            patchIssueMutation.mutate(body)
-          }}
-          patchPending={patchIssueMutation.isPending}
+          onPatch={handlePatchIssue}
         />
 
         <Field name="status">
