@@ -1,88 +1,84 @@
-"use client";
+"use client"
 
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
 
-import { authClient } from "@/lib/auth-client";
-import { slugifyOrganizationSlug } from "@/lib/slugify-organization";
-import { fieldErrorsFromZodError } from "@/lib/zod-field-errors";
-import { Button } from "@workspace/ui/components/button";
-import {
-  Field,
-  FieldError,
-  FieldLabel,
-} from "@workspace/ui/components/field";
-import { Form } from "@workspace/ui/components/form";
-import { Input } from "@workspace/ui/components/input";
+import { authClient } from "@/lib/auth-client"
+import { slugifyOrganizationSlug } from "@/lib/slugify-organization"
+import { fieldErrorsFromZodError } from "@/lib/zod-field-errors"
+import { Button } from "@workspace/ui/components/button"
+import { Field, FieldError, FieldLabel } from "@workspace/ui/components/field"
+import { Form } from "@workspace/ui/components/form"
+import { Input } from "@workspace/ui/components/input"
 
-import { organizationOnboardingFormSchema } from "./organization-onboarding-form.schema";
+import { organizationOnboardingFormSchema } from "./organization-onboarding-form.schema"
 
 export const OrganizationOnboardingForm = () => {
-  const router = useRouter();
-  const organizations = authClient.useListOrganizations();
-  const slugEditedByUserRef = useRef(false);
-  const nameInputRef = useRef<HTMLInputElement>(null);
-  const slugInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter()
+  const organizations = authClient.useListOrganizations()
+  const slugEditedByUserRef = useRef(false)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const slugInputRef = useRef<HTMLInputElement>(null)
   const [fieldErrors, setFieldErrors] = useState<
     Record<string, string | string[]>
-  >({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [slugHint, setSlugHint] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  >({})
+  const [formError, setFormError] = useState<string | null>(null)
+  const [slugHint, setSlugHint] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (organizations.isPending) {
-      return;
+      return
     }
     if (organizations.data && organizations.data.length > 0) {
-      router.replace("/dashboard");
+      router.replace("/dashboard")
     }
-  }, [organizations.data, organizations.isPending, router]);
+  }, [organizations.data, organizations.isPending, router])
 
   const handleFormSubmit = async (values: Record<string, unknown>) => {
-    setFieldErrors({});
-    setFormError(null);
-    const parsed = organizationOnboardingFormSchema.safeParse(values);
+    setFieldErrors({})
+    setFormError(null)
+    const parsed = organizationOnboardingFormSchema.safeParse(values)
     if (!parsed.success) {
-      setFieldErrors(fieldErrorsFromZodError(parsed.error));
-      return;
+      setFieldErrors(fieldErrorsFromZodError(parsed.error))
+      return
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
       const created = await authClient.organization.create({
         name: parsed.data.name,
         slug: parsed.data.slug,
-      });
+      })
       if (created.error) {
-        setFormError(created.error.message ?? "Could not create workspace.");
-        return;
+        setFormError(created.error.message ?? "Could not create workspace.")
+        return
       }
-      router.push("/dashboard");
-      router.refresh();
+      router.push("/dashboard")
+      router.refresh()
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Something went wrong.";
-      setFormError(message);
+        error instanceof Error ? error.message : "Something went wrong."
+      setFormError(message)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   if (organizations.isPending) {
     return (
-      <p className="text-muted-foreground text-sm" role="status">
+      <p className="text-sm text-muted-foreground" role="status">
         Loading your workspace…
       </p>
-    );
+    )
   }
 
   if (organizations.data && organizations.data.length > 0) {
     return (
-      <p className="text-muted-foreground text-sm" role="status">
+      <p className="text-sm text-muted-foreground" role="status">
         Redirecting…
       </p>
-    );
+    )
   }
 
   return (
@@ -91,7 +87,7 @@ export const OrganizationOnboardingForm = () => {
       errors={fieldErrors}
       noValidate
       onFormSubmit={(values) => {
-        void handleFormSubmit(values);
+        void handleFormSubmit(values)
       }}
     >
       <Field name="name">
@@ -103,11 +99,11 @@ export const OrganizationOnboardingForm = () => {
           name="name"
           onChange={(e) => {
             if (slugEditedByUserRef.current) {
-              return;
+              return
             }
-            const nextSlug = slugifyOrganizationSlug(e.target.value);
+            const nextSlug = slugifyOrganizationSlug(e.target.value)
             if (slugInputRef.current) {
-              slugInputRef.current.value = nextSlug;
+              slugInputRef.current.value = nextSlug
             }
           }}
           placeholder="Acme Capital"
@@ -124,23 +120,23 @@ export const OrganizationOnboardingForm = () => {
           id="onboarding-org-slug"
           name="slug"
           onBlur={async (e) => {
-            const slug = e.target.value.trim();
+            const slug = e.target.value.trim()
             if (!slug) {
-              setSlugHint(null);
-              return;
+              setSlugHint(null)
+              return
             }
             const checked = await authClient.organization.checkSlug({
               slug,
-            });
+            })
             if (checked.error) {
-              setSlugHint("That slug is already taken. Try another.");
-              return;
+              setSlugHint("That slug is already taken. Try another.")
+              return
             }
-            setSlugHint("That slug is available.");
+            setSlugHint("That slug is available.")
           }}
           onChange={() => {
-            slugEditedByUserRef.current = true;
-            setSlugHint(null);
+            slugEditedByUserRef.current = true
+            setSlugHint(null)
           }}
           pattern="[a-z0-9]+(-[a-z0-9]+)*"
           placeholder="acme-capital"
@@ -154,8 +150,8 @@ export const OrganizationOnboardingForm = () => {
           <p
             className={
               slugHint.includes("taken")
-                ? "text-destructive text-sm"
-                : "text-muted-foreground text-sm"
+                ? "text-sm text-destructive"
+                : "text-sm text-muted-foreground"
             }
             id="onboarding-slug-hint"
             role="status"
@@ -166,7 +162,7 @@ export const OrganizationOnboardingForm = () => {
       </Field>
       {formError ? (
         <p
-          className="text-destructive text-sm"
+          className="text-sm text-destructive"
           id="onboarding-org-error"
           role="alert"
         >
@@ -177,5 +173,5 @@ export const OrganizationOnboardingForm = () => {
         Continue to dashboard
       </Button>
     </Form>
-  );
-};
+  )
+}

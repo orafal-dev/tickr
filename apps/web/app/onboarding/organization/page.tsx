@@ -1,21 +1,21 @@
-import { Suspense } from "react";
+import { Suspense } from "react"
 
-import { OrganizationOnboardingForm } from "@/app/onboarding/organization/organization-onboarding-form";
+import { OrganizationOnboardingForm } from "@/app/onboarding/organization/organization-onboarding-form"
 import {
   Card,
   CardDescription,
   CardHeader,
   CardPanel,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@workspace/ui/components/card"
 
 const OrganizationOnboardingFallback = () => {
   return (
-    <p className="text-muted-foreground text-sm" role="status">
+    <p className="text-sm text-muted-foreground" role="status">
       Loading…
     </p>
-  );
-};
+  )
+}
 
 export default function OnboardingOrganizationPage() {
   return (
@@ -33,5 +33,5 @@ export default function OnboardingOrganizationPage() {
         </Suspense>
       </CardPanel>
     </Card>
-  );
+  )
 }

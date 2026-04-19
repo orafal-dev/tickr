@@ -1,16 +1,19 @@
-"use client";
+"use client"
 
-import { mergeProps } from "@base-ui/react/merge-props";
-import { useRender } from "@base-ui/react/use-render";
-import { ArrowRight01Icon, MoreHorizontalIcon } from "@hugeicons/core-free-icons";
-import type * as React from "react";
-import { cn } from "@workspace/ui/lib/utils";
-import { UiIcon } from "@workspace/ui/components/ui-icon";
+import { mergeProps } from "@base-ui/react/merge-props"
+import { useRender } from "@base-ui/react/use-render"
+import {
+  ArrowRight01Icon,
+  MoreHorizontalIcon,
+} from "@hugeicons/core-free-icons"
+import type * as React from "react"
+import { cn } from "@workspace/ui/lib/utils"
+import { UiIcon } from "@workspace/ui/components/ui-icon"
 
 export function Breadcrumb({
   ...props
 }: React.ComponentProps<"nav">): React.ReactElement {
-  return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
+  return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />
 }
 
 export function BreadcrumbList({
@@ -20,13 +23,13 @@ export function BreadcrumbList({
   return (
     <ol
       className={cn(
-        "wrap-break-word flex flex-wrap items-center gap-1.5 text-muted-foreground text-sm sm:gap-2.5",
-        className,
+        "flex flex-wrap items-center gap-1.5 text-sm wrap-break-word text-muted-foreground sm:gap-2.5",
+        className
       )}
       data-slot="breadcrumb-list"
       {...props}
     />
-  );
+  )
 }
 
 export function BreadcrumbItem({
@@ -39,7 +42,7 @@ export function BreadcrumbItem({
       data-slot="breadcrumb-item"
       {...props}
     />
-  );
+  )
 }
 
 export function BreadcrumbLink({
@@ -50,13 +53,13 @@ export function BreadcrumbLink({
   const defaultProps = {
     className: cn("transition-colors hover:text-foreground", className),
     "data-slot": "breadcrumb-link",
-  };
+  }
 
   return useRender({
     defaultTagName: "a",
     props: mergeProps<"a">(defaultProps, props),
     render,
-  });
+  })
 }
 
 export function BreadcrumbPage({
@@ -70,7 +73,7 @@ export function BreadcrumbPage({
       data-slot="breadcrumb-page"
       {...props}
     />
-  );
+  )
 }
 
 export function BreadcrumbSeparator({
@@ -87,10 +90,14 @@ export function BreadcrumbSeparator({
       {...props}
     >
       {children ?? (
-        <UiIcon aria-hidden className="rtl:rotate-180" icon={ArrowRight01Icon} />
+        <UiIcon
+          aria-hidden
+          className="rtl:rotate-180"
+          icon={ArrowRight01Icon}
+        />
       )}
     </li>
-  );
+  )
 }
 
 export function BreadcrumbEllipsis({
@@ -108,5 +115,5 @@ export function BreadcrumbEllipsis({
       <UiIcon aria-hidden className="size-4" icon={MoreHorizontalIcon} />
       <span className="sr-only">More</span>
     </span>
-  );
+  )
 }

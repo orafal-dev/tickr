@@ -1,24 +1,26 @@
-import Link from "next/link";
+import Link from "next/link"
 
-import { getSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth"
 import {
   Card,
   CardDescription,
   CardHeader,
   CardPanel,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@workspace/ui/components/card"
 
 const dashboardShortcuts = [
   {
     href: "/dashboard/issues",
     title: "Issues",
-    description: "Board and table views, filters, and issue keys for your workspace.",
+    description:
+      "Board and table views, filters, and issue keys for your workspace.",
   },
   {
     href: "/dashboard/projects",
     title: "Projects",
-    description: "Group work and keep issue lists scoped to the right initiative.",
+    description:
+      "Group work and keep issue lists scoped to the right initiative.",
   },
   {
     href: "/dashboard/labels",
@@ -30,10 +32,10 @@ const dashboardShortcuts = [
     title: "Notifications",
     description: "Stay on top of updates without leaving the product surface.",
   },
-] as const;
+] as const
 
 export default async function DashboardHomePage() {
-  const session = await getSession();
+  const session = await getSession()
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col gap-8 overflow-y-auto">
@@ -41,7 +43,7 @@ export default async function DashboardHomePage() {
         <h1 className="font-heading text-2xl font-medium tracking-tight sm:text-3xl">
           Overview
         </h1>
-        <p className="text-muted-foreground max-w-3xl text-sm leading-relaxed sm:text-base">
+        <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
           Your workspace hub: jump into tracking work, organizing projects, and
           managing how issues are labeled and surfaced.
         </p>
@@ -50,7 +52,7 @@ export default async function DashboardHomePage() {
       <div className="grid w-full gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {dashboardShortcuts.map((item) => (
           <Link
-            className="group block h-full min-h-[9.5rem] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="group block h-full min-h-[9.5rem] rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             href={item.href}
             key={item.href}
           >
@@ -60,7 +62,7 @@ export default async function DashboardHomePage() {
                   {item.title}
                   <span
                     aria-hidden
-                    className="text-muted-foreground text-sm transition-transform group-hover:translate-x-0.5"
+                    className="text-sm text-muted-foreground transition-transform group-hover:translate-x-0.5"
                   >
                     →
                   </span>
@@ -83,7 +85,8 @@ export default async function DashboardHomePage() {
             from{" "}
             <code className="font-mono text-xs text-foreground">@/lib/api</code>
             , forwarding{" "}
-            <code className="font-mono text-xs text-foreground">x-user-id</code>,{" "}
+            <code className="font-mono text-xs text-foreground">x-user-id</code>
+            ,{" "}
             <code className="font-mono text-xs text-foreground">
               x-organization-id
             </code>
@@ -96,7 +99,7 @@ export default async function DashboardHomePage() {
         </CardHeader>
         {session ? (
           <CardPanel className="border-t pt-0">
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Current user id:{" "}
               <span className="font-mono text-xs text-foreground">
                 {session.user.id}
@@ -106,5 +109,5 @@ export default async function DashboardHomePage() {
         ) : null}
       </Card>
     </div>
-  );
+  )
 }

@@ -6,6 +6,6 @@ export const slugifyOrganizationSlug = (value: string): string => {
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "")
     .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-  return slug.length > 0 ? slug : "workspace";
-};
+    .replace(/^-|-$/g, "")
+  return slug.length > 0 ? slug : "workspace"
+}

@@ -1,19 +1,19 @@
-import Link from "next/link";
-import { Suspense } from "react";
+import Link from "next/link"
+import { Suspense } from "react"
 
-import { LoginForm } from "@/app/(auth)/login/login-form";
-import { AuthOAuthButtons } from "@/components/auth-oauth-buttons";
-import { getConfiguredOAuthProviders } from "@/lib/oauth-providers.server";
+import { LoginForm } from "@/app/(auth)/login/login-form"
+import { AuthOAuthButtons } from "@/components/auth-oauth-buttons"
+import { getConfiguredOAuthProviders } from "@/lib/oauth-providers.server"
 import {
   Card,
   CardDescription,
   CardHeader,
   CardPanel,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@workspace/ui/components/card"
 
 export default function LoginPage() {
-  const oauthProviders = getConfiguredOAuthProviders();
+  const oauthProviders = getConfiguredOAuthProviders()
   return (
     <Card>
       <CardHeader>
@@ -23,12 +23,14 @@ export default function LoginPage() {
         </CardDescription>
       </CardHeader>
       <CardPanel className="flex flex-col gap-4">
-        <Suspense fallback={<p className="text-muted-foreground text-sm">Loading…</p>}>
+        <Suspense
+          fallback={<p className="text-sm text-muted-foreground">Loading…</p>}
+        >
           <LoginForm />
         </Suspense>
         {oauthProviders.length > 0 ? (
           <Suspense
-            fallback={<p className="text-muted-foreground text-sm">Loading…</p>}
+            fallback={<p className="text-sm text-muted-foreground">Loading…</p>}
           >
             <AuthOAuthButtons
               defaultPostAuthPath="/dashboard"
@@ -36,10 +38,10 @@ export default function LoginPage() {
             />
           </Suspense>
         ) : null}
-        <p className="text-muted-foreground text-center text-sm">
+        <p className="text-center text-sm text-muted-foreground">
           No account?{" "}
           <Link
-            className="text-foreground font-medium underline underline-offset-4"
+            className="font-medium text-foreground underline underline-offset-4"
             href="/register"
           >
             Create one
@@ -47,5 +49,5 @@ export default function LoginPage() {
         </p>
       </CardPanel>
     </Card>
-  );
+  )
 }

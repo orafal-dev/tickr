@@ -4,10 +4,10 @@
  */
 export const resolveSafeInternalPath = (
   value: string | null | undefined,
-  fallback: string,
+  fallback: string
 ): string => {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return fallback;
+    return fallback
   }
-  return value;
-};
+  return value
+}

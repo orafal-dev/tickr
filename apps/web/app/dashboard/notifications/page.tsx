@@ -1,5 +1,5 @@
-import { NotificationsPanel } from "@/app/dashboard/notifications/notifications-panel";
+import { NotificationsPanel } from "@/app/dashboard/notifications/notifications-panel"
 
 export default function NotificationsPage() {
-  return <NotificationsPanel />;
+  return <NotificationsPanel />
 }

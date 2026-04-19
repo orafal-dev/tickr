@@ -3,11 +3,11 @@
  * The Next.js handler lives at `/api/auth/*`, so rewrite the path when needed.
  */
 export const resolvePublicEmailVerificationUrl = (
-  verificationUrlFromAuth: string,
+  verificationUrlFromAuth: string
 ): string => {
-  const url = new URL(verificationUrlFromAuth);
+  const url = new URL(verificationUrlFromAuth)
   if (url.pathname === "/verify-email") {
-    url.pathname = "/api/auth/verify-email";
+    url.pathname = "/api/auth/verify-email"
   }
-  return url.toString();
-};
+  return url.toString()
+}

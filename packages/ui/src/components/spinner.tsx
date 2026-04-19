@@ -1,7 +1,7 @@
-import { Loading03Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon, type HugeiconsIconProps } from "@hugeicons/react";
-import type React from "react";
-import { cn } from "@workspace/ui/lib/utils";
+import { Loading03Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon, type HugeiconsIconProps } from "@hugeicons/react"
+import type React from "react"
+import { cn } from "@workspace/ui/lib/utils"
 
 export function Spinner({
   className,
@@ -17,5 +17,5 @@ export function Spinner({
       strokeWidth={1.5}
       {...props}
     />
-  );
+  )
 }

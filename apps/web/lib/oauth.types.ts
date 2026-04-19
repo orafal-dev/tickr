@@ -1,1 +1,1 @@
-export type OAuthProviderId = "google" | "github" | "linear";
+export type OAuthProviderId = "google" | "github" | "linear"

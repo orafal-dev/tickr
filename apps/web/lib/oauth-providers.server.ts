@@ -1,6 +1,6 @@
-import "server-only";
+import "server-only"
 
 export {
   getConfiguredOAuthProviders,
   resolveSocialProvidersConfig,
-} from "@/lib/oauth-providers";
+} from "@/lib/oauth-providers"

@@ -9,11 +9,11 @@ import {
   Post,
   Query,
   UseGuards,
-} from '@nestjs/common';
-import type { ZodTypeAny } from 'zod';
+} from "@nestjs/common"
+import type { ZodTypeAny } from "zod"
 
-import { PmAuthGuard } from './pm-auth.guard';
-import { PmCtx } from './pm.decorators';
+import { PmAuthGuard } from "./pm-auth.guard"
+import { PmCtx } from "./pm.decorators"
 import {
   createCommentBodySchema,
   createIssueBodySchema,
@@ -24,212 +24,209 @@ import {
   updateIssueBodySchema,
   updateLabelBodySchema,
   updateProjectBodySchema,
-} from './pm.request.schema';
-import { PmService } from './pm.service';
-import type { PmContext } from './pm.types';
+} from "./pm.request.schema"
+import { PmService } from "./pm.service"
+import type { PmContext } from "./pm.types"
 
 const parseOrThrow = <T>(schema: ZodTypeAny, input: unknown): T => {
-  const parsed = schema.safeParse(input);
+  const parsed = schema.safeParse(input)
   if (!parsed.success) {
-    throw new BadRequestException(parsed.error.flatten());
+    throw new BadRequestException(parsed.error.flatten())
   }
-  return parsed.data as T;
-};
+  return parsed.data as T
+}
 
-@Controller('pm')
+@Controller("pm")
 @UseGuards(PmAuthGuard)
 export class PmController {
   constructor(private readonly pmService: PmService) {}
 
-  @Get('workspace')
+  @Get("workspace")
   getWorkspace(@PmCtx() ctx: PmContext): Promise<{
-    readonly organizationSlug: string | null;
+    readonly organizationSlug: string | null
   }> {
-    return this.pmService.getWorkspaceMeta(ctx.organizationId);
+    return this.pmService.getWorkspaceMeta(ctx.organizationId)
   }
 
-  @Get('statuses')
+  @Get("statuses")
   listStatuses(@PmCtx() ctx: PmContext): Promise<unknown[]> {
-    return this.pmService.listStatuses(ctx.organizationId);
+    return this.pmService.listStatuses(ctx.organizationId)
   }
 
-  @Patch('statuses/reorder')
+  @Patch("statuses/reorder")
   reorderStatuses(
     @PmCtx() ctx: PmContext,
-    @Body() body: unknown,
+    @Body() body: unknown
   ): Promise<unknown[]> {
     return this.pmService.reorderStatuses(
       ctx.organizationId,
-      parseOrThrow(reorderStatusesBodySchema, body),
-    );
+      parseOrThrow(reorderStatusesBodySchema, body)
+    )
   }
 
-  @Get('labels')
+  @Get("labels")
   listLabels(@PmCtx() ctx: PmContext): Promise<unknown[]> {
-    return this.pmService.listLabels(ctx.organizationId);
+    return this.pmService.listLabels(ctx.organizationId)
   }
 
-  @Post('labels')
+  @Post("labels")
   createLabel(
     @PmCtx() ctx: PmContext,
-    @Body() body: unknown,
+    @Body() body: unknown
   ): Promise<unknown> {
     return this.pmService.createLabel(
       ctx.organizationId,
-      parseOrThrow(createLabelBodySchema, body),
-    );
+      parseOrThrow(createLabelBodySchema, body)
+    )
   }
 
-  @Patch('labels/:labelId')
+  @Patch("labels/:labelId")
   updateLabel(
     @PmCtx() ctx: PmContext,
-    @Param('labelId') labelId: string,
-    @Body() body: unknown,
+    @Param("labelId") labelId: string,
+    @Body() body: unknown
   ): Promise<unknown> {
     return this.pmService.updateLabel(
       ctx.organizationId,
       labelId,
-      parseOrThrow(updateLabelBodySchema, body),
-    );
+      parseOrThrow(updateLabelBodySchema, body)
+    )
   }
 
-  @Delete('labels/:labelId')
+  @Delete("labels/:labelId")
   deleteLabel(
     @PmCtx() ctx: PmContext,
-    @Param('labelId') labelId: string,
+    @Param("labelId") labelId: string
   ): Promise<void> {
-    return this.pmService.deleteLabel(ctx.organizationId, labelId);
+    return this.pmService.deleteLabel(ctx.organizationId, labelId)
   }
 
-  @Get('projects')
+  @Get("projects")
   listProjects(@PmCtx() ctx: PmContext): Promise<unknown[]> {
-    return this.pmService.listProjects(ctx.organizationId);
+    return this.pmService.listProjects(ctx.organizationId)
   }
 
-  @Post('projects')
+  @Post("projects")
   createProject(
     @PmCtx() ctx: PmContext,
-    @Body() body: unknown,
+    @Body() body: unknown
   ): Promise<unknown> {
     return this.pmService.createProject(
       ctx.organizationId,
-      parseOrThrow(createProjectBodySchema, body),
-    );
+      parseOrThrow(createProjectBodySchema, body)
+    )
   }
 
-  @Patch('projects/:projectId')
+  @Patch("projects/:projectId")
   updateProject(
     @PmCtx() ctx: PmContext,
-    @Param('projectId') projectId: string,
-    @Body() body: unknown,
+    @Param("projectId") projectId: string,
+    @Body() body: unknown
   ): Promise<unknown> {
     return this.pmService.updateProject(
       ctx.organizationId,
       projectId,
-      parseOrThrow(updateProjectBodySchema, body),
-    );
+      parseOrThrow(updateProjectBodySchema, body)
+    )
   }
 
-  @Get('issues')
+  @Get("issues")
   listIssues(
     @PmCtx() ctx: PmContext,
-    @Query() query: Record<string, string | string[] | undefined>,
+    @Query() query: Record<string, string | string[] | undefined>
   ): Promise<unknown[]> {
-    const normalized: Record<string, string> = {};
+    const normalized: Record<string, string> = {}
     for (const [key, value] of Object.entries(query)) {
-      if (typeof value === 'string') {
-        normalized[key] = value;
-      } else if (Array.isArray(value) && typeof value[0] === 'string') {
-        normalized[key] = value[0];
+      if (typeof value === "string") {
+        normalized[key] = value
+      } else if (Array.isArray(value) && typeof value[0] === "string") {
+        normalized[key] = value[0]
       }
     }
     return this.pmService.listIssues(
       ctx.organizationId,
-      parseOrThrow(listIssuesQuerySchema, normalized),
-    );
+      parseOrThrow(listIssuesQuerySchema, normalized)
+    )
   }
 
-  @Post('issues')
+  @Post("issues")
   createIssue(
     @PmCtx() ctx: PmContext,
-    @Body() body: unknown,
+    @Body() body: unknown
   ): Promise<unknown> {
     return this.pmService.createIssue(
       ctx.organizationId,
       ctx.userId,
-      parseOrThrow(createIssueBodySchema, body),
-    );
+      parseOrThrow(createIssueBodySchema, body)
+    )
   }
 
-  @Get('issues/:issueId/comments')
+  @Get("issues/:issueId/comments")
   listComments(
     @PmCtx() ctx: PmContext,
-    @Param('issueId') issueId: string,
+    @Param("issueId") issueId: string
   ): Promise<unknown[]> {
-    return this.pmService.listComments(ctx.organizationId, issueId);
+    return this.pmService.listComments(ctx.organizationId, issueId)
   }
 
-  @Post('issues/:issueId/comments')
+  @Post("issues/:issueId/comments")
   createComment(
     @PmCtx() ctx: PmContext,
-    @Param('issueId') issueId: string,
-    @Body() body: unknown,
+    @Param("issueId") issueId: string,
+    @Body() body: unknown
   ): Promise<unknown> {
     return this.pmService.createComment(
       ctx.organizationId,
       issueId,
       ctx.userId,
-      parseOrThrow(createCommentBodySchema, body),
-    );
+      parseOrThrow(createCommentBodySchema, body)
+    )
   }
 
-  @Get('issues/:issueId')
+  @Get("issues/:issueId")
   getIssue(
     @PmCtx() ctx: PmContext,
-    @Param('issueId') issueId: string,
+    @Param("issueId") issueId: string
   ): Promise<unknown> {
-    return this.pmService.getIssue(ctx.organizationId, issueId);
+    return this.pmService.getIssue(ctx.organizationId, issueId)
   }
 
-  @Patch('issues/:issueId')
+  @Patch("issues/:issueId")
   updateIssue(
     @PmCtx() ctx: PmContext,
-    @Param('issueId') issueId: string,
-    @Body() body: unknown,
+    @Param("issueId") issueId: string,
+    @Body() body: unknown
   ): Promise<unknown> {
     return this.pmService.updateIssue(
       ctx.organizationId,
       issueId,
       ctx.userId,
-      parseOrThrow(updateIssueBodySchema, body),
-    );
+      parseOrThrow(updateIssueBodySchema, body)
+    )
   }
 
-  @Get('notifications')
+  @Get("notifications")
   listNotifications(@PmCtx() ctx: PmContext): Promise<unknown[]> {
-    return this.pmService.listNotifications(
-      ctx.organizationId,
-      ctx.userId,
-    );
+    return this.pmService.listNotifications(ctx.organizationId, ctx.userId)
   }
 
-  @Patch('notifications/:notificationId/read')
+  @Patch("notifications/:notificationId/read")
   markNotificationRead(
     @PmCtx() ctx: PmContext,
-    @Param('notificationId') notificationId: string,
+    @Param("notificationId") notificationId: string
   ): Promise<void> {
     return this.pmService.markNotificationRead(
       ctx.organizationId,
       ctx.userId,
-      notificationId,
-    );
+      notificationId
+    )
   }
 
-  @Post('notifications/read-all')
+  @Post("notifications/read-all")
   markAllNotificationsRead(@PmCtx() ctx: PmContext): Promise<void> {
     return this.pmService.markAllNotificationsRead(
       ctx.organizationId,
-      ctx.userId,
-    );
+      ctx.userId
+    )
   }
 }

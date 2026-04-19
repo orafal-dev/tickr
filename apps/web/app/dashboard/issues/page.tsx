@@ -1,5 +1,5 @@
-import { IssuesBoard } from "@/app/dashboard/issues/issues-board";
+import { IssuesBoard } from "@/app/dashboard/issues/issues-board"
 
 export default function IssuesPage() {
-  return <IssuesBoard />;
+  return <IssuesBoard />
 }

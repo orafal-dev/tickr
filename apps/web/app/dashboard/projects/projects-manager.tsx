@@ -1,32 +1,29 @@
-"use client";
+"use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useState } from "react"
 
-import { authClient } from "@/lib/auth-client";
-import { pmJson } from "@/lib/pm-browser";
-import type { PmProject } from "@/lib/pm.types";
-import { Button } from "@workspace/ui/components/button";
-import {
-  Field,
-  FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
-import { RichTextEditor } from "@workspace/ui/components/rich-text-editor";
-import { isStoredRichTextContentEmpty } from "@workspace/ui/lib/rich-text-tiptap";
+import { authClient } from "@/lib/auth-client"
+import { pmJson } from "@/lib/pm-browser"
+import type { PmProject } from "@/lib/pm.types"
+import { Button } from "@workspace/ui/components/button"
+import { Field, FieldLabel } from "@workspace/ui/components/field"
+import { Input } from "@workspace/ui/components/input"
+import { RichTextEditor } from "@workspace/ui/components/rich-text-editor"
+import { isStoredRichTextContentEmpty } from "@workspace/ui/lib/rich-text-tiptap"
 
 export const ProjectsManager = () => {
-  const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
-  const activeOrganizationId = session?.session.activeOrganizationId ?? "";
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const queryClient = useQueryClient()
+  const { data: session } = authClient.useSession()
+  const activeOrganizationId = session?.session.activeOrganizationId ?? ""
+  const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
 
   const projectsQuery = useQuery({
     queryKey: ["pm", "projects"],
     queryFn: () => pmJson<PmProject[]>("/projects"),
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -38,50 +35,47 @@ export const ProjectsManager = () => {
             ? undefined
             : description,
         }),
-      });
+      })
     },
     onSuccess: async () => {
-      setName("");
-      setDescription("");
-      await queryClient.invalidateQueries({ queryKey: ["pm", "projects"] });
+      setName("")
+      setDescription("")
+      await queryClient.invalidateQueries({ queryKey: ["pm", "projects"] })
     },
-  });
+  })
 
   const updateMutation = useMutation({
-    mutationFn: async (input: {
-      id: string;
-      status: PmProject['status'];
-    }) => {
+    mutationFn: async (input: { id: string; status: PmProject["status"] }) => {
       return pmJson<PmProject>(`/projects/${input.id}`, {
         method: "PATCH",
         body: JSON.stringify({ status: input.status }),
-      });
+      })
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["pm", "projects"] });
+      await queryClient.invalidateQueries({ queryKey: ["pm", "projects"] })
     },
-  });
+  })
 
   if (!activeOrganizationId) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Select a workspace from the header first.
       </p>
-    );
+    )
   }
 
   const handleCreate = () => {
     if (!name.trim()) {
-      return;
+      return
     }
-    createMutation.mutate();
-  };
+    createMutation.mutate()
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
       <div>
         <h1 className="font-heading text-2xl font-medium">Projects</h1>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           Group issues under a project with a simple lifecycle status.
         </p>
       </div>
@@ -95,7 +89,7 @@ export const ProjectsManager = () => {
           <Input
             aria-label="Project name"
             onChange={(event) => {
-              setName(event.target.value);
+              setName(event.target.value)
             }}
             value={name}
           />
@@ -120,7 +114,7 @@ export const ProjectsManager = () => {
 
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-left text-sm">
-          <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+          <thead className="bg-muted/40 text-xs text-muted-foreground uppercase">
             <tr>
               <th className="px-3 py-2 font-medium">Name</th>
               <th className="px-3 py-2 font-medium">Status</th>
@@ -134,25 +128,25 @@ export const ProjectsManager = () => {
                 <td className="px-3 py-2">
                   <select
                     aria-label={`Status for ${project.name}`}
-                    className="border-input bg-background h-8 rounded-md border px-2 text-xs capitalize"
+                    className="h-8 rounded-md border border-input bg-background px-2 text-xs capitalize"
                     onChange={(event) => {
                       updateMutation.mutate({
                         id: project.id,
-                        status: event.target.value as PmProject['status'],
-                      });
+                        status: event.target.value as PmProject["status"],
+                      })
                     }}
                     value={project.status}
                   >
-                    {['planned', 'active', 'completed', 'paused'].map(
+                    {["planned", "active", "completed", "paused"].map(
                       (status) => (
                         <option key={status} value={status}>
                           {status}
                         </option>
-                      ),
+                      )
                     )}
                   </select>
                 </td>
-                <td className="text-muted-foreground px-3 py-2 text-xs">
+                <td className="px-3 py-2 text-xs text-muted-foreground">
                   {new Date(project.updatedAt).toLocaleString()}
                 </td>
               </tr>
@@ -160,7 +154,7 @@ export const ProjectsManager = () => {
             {!projectsQuery.isPending &&
             (projectsQuery.data ?? []).length === 0 ? (
               <tr>
-                <td className="text-muted-foreground px-3 py-6" colSpan={3}>
+                <td className="px-3 py-6 text-muted-foreground" colSpan={3}>
                   No projects yet.
                 </td>
               </tr>
@@ -169,5 +163,5 @@ export const ProjectsManager = () => {
         </table>
       </div>
     </div>
-  );
-};
+  )
+}

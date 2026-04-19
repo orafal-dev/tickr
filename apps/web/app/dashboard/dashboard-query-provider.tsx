@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { useState } from "react"
 
 export const DashboardQueryProvider = ({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) => {
   const [queryClient] = useState(
     () =>
@@ -16,9 +16,9 @@ export const DashboardQueryProvider = ({
             staleTime: 30_000,
           },
         },
-      }),
-  );
+      })
+  )
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-};
+  )
+}

@@ -1,17 +1,17 @@
-"use client";
+"use client"
 
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
   UnfoldMoreIcon,
-} from "@hugeicons/core-free-icons";
-import type * as React from "react";
-import { DayPicker } from "react-day-picker";
-import { cn } from "@workspace/ui/lib/utils";
-import { UiIcon } from "@workspace/ui/components/ui-icon";
+} from "@hugeicons/core-free-icons"
+import type * as React from "react"
+import { DayPicker } from "react-day-picker"
+import { cn } from "@workspace/ui/lib/utils"
+import { UiIcon } from "@workspace/ui/components/ui-icon"
 
 const buttonClassNames =
-  "relative flex size-(--cell-size) text-base sm:text-sm items-center justify-center rounded-lg text-foreground not-in-data-selected:hover:bg-accent disabled:pointer-events-none disabled:opacity-64 [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0";
+  "relative flex size-(--cell-size) text-base sm:text-sm items-center justify-center rounded-lg text-foreground not-in-data-selected:hover:bg-accent disabled:pointer-events-none disabled:opacity-64 [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
 
 export function Calendar({
   className,
@@ -29,7 +29,7 @@ export function Calendar({
     day: "size-(--cell-size) text-sm py-px",
     day_button: cn(
       buttonClassNames,
-      "in-data-disabled:pointer-events-none in-[.range-middle]:rounded-none in-[.range-end:not(.range-start)]:rounded-s-none in-[.range-start:not(.range-end)]:rounded-e-none in-[.range-middle]:in-data-selected:bg-accent in-data-selected:bg-primary in-[.range-middle]:in-data-selected:text-foreground in-data-disabled:text-muted-foreground/72 in-data-outside:text-muted-foreground/72 in-data-selected:in-data-outside:text-primary-foreground in-data-selected:text-primary-foreground in-data-disabled:line-through outline-none in-[[data-selected]:not(.range-middle)]:transition-[color,background-color,border-radius,box-shadow] focus-visible:z-1 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+      "outline-none focus-visible:z-1 focus-visible:ring-[3px] focus-visible:ring-ring/50 in-data-outside:text-muted-foreground/72 in-data-selected:bg-primary in-data-selected:text-primary-foreground in-data-selected:in-data-outside:text-primary-foreground in-data-disabled:pointer-events-none in-data-disabled:text-muted-foreground/72 in-data-disabled:line-through in-[.range-end:not(.range-start)]:rounded-s-none in-[.range-middle]:rounded-none in-[.range-middle]:in-data-selected:bg-accent in-[.range-middle]:in-data-selected:text-foreground in-[.range-start:not(.range-end)]:rounded-e-none in-[[data-selected]:not(.range-middle)]:transition-[color,background-color,border-radius,box-shadow]"
     ),
     dropdown: "absolute bg-popover inset-0 opacity-0",
     dropdown_root:
@@ -53,23 +53,22 @@ export function Calendar({
       "size-(--cell-size) p-0 text-xs font-medium text-muted-foreground/72",
     weekday:
       "size-(--cell-size) p-0 text-xs font-medium text-muted-foreground/72",
-  };
+  }
   const mergedClassNames: typeof defaultClassNames = Object.keys(
-    defaultClassNames,
+    defaultClassNames
   ).reduce(
     (acc, key) => {
-      const userClass = classNames?.[key as keyof typeof classNames];
-      const baseClass =
-        defaultClassNames[key as keyof typeof defaultClassNames];
+      const userClass = classNames?.[key as keyof typeof classNames]
+      const baseClass = defaultClassNames[key as keyof typeof defaultClassNames]
 
       acc[key as keyof typeof defaultClassNames] = userClass
         ? cn(baseClass, userClass)
-        : baseClass;
+        : baseClass
 
-      return acc;
+      return acc
     },
-    { ...defaultClassNames } as typeof defaultClassNames,
-  );
+    { ...defaultClassNames } as typeof defaultClassNames
+  )
 
   const defaultComponents = {
     Chevron: ({
@@ -77,8 +76,8 @@ export function Calendar({
       orientation,
       ...props
     }: {
-      className?: string;
-      orientation?: "left" | "right" | "up" | "down";
+      className?: string
+      orientation?: "left" | "right" | "up" | "down"
     }): React.ReactElement => {
       if (orientation === "left") {
         return (
@@ -88,7 +87,7 @@ export function Calendar({
             icon={ArrowLeft01Icon}
             {...props}
           />
-        );
+        )
       }
 
       if (orientation === "right") {
@@ -99,7 +98,7 @@ export function Calendar({
             icon={ArrowRight01Icon}
             {...props}
           />
-        );
+        )
       }
 
       return (
@@ -109,19 +108,19 @@ export function Calendar({
           icon={UnfoldMoreIcon}
           {...props}
         />
-      );
+      )
     },
-  };
+  }
 
   const mergedComponents = {
     ...defaultComponents,
     ...userComponents,
-  };
+  }
 
   const dayPickerProps = {
     className: cn(
       "w-fit [--cell-size:--spacing(10)] sm:[--cell-size:--spacing(9)]",
-      className,
+      className
     ),
     classNames: mergedClassNames,
     components: mergedComponents,
@@ -133,11 +132,11 @@ export function Calendar({
     mode,
     showOutsideDays,
     ...props,
-  };
+  }
 
   return (
     <DayPicker
       {...(dayPickerProps as React.ComponentProps<typeof DayPicker>)}
     />
-  );
+  )
 }

@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import Link from "next/link"
+import { useMemo, useState } from "react"
 
-import { IssuesKanban } from "@/app/dashboard/issues/issues-kanban";
-import { authClient } from "@/lib/auth-client";
+import { IssuesKanban } from "@/app/dashboard/issues/issues-kanban"
+import { authClient } from "@/lib/auth-client"
 import {
   finalizeOptimisticIssueCreate,
   issueRowMatchesPmIssuesListFilters,
@@ -16,29 +16,21 @@ import {
   restorePmIssuesListsSnapshot,
   snapshotPmIssuesLists,
   sortIssuesListByUpdatedAtDesc,
-} from "@/lib/pm-issues-cache";
-import { pmJson } from "@/lib/pm-browser";
-import type {
-  IssueListRow,
-  PmLabel,
-  PmProject,
-  PmStatus,
-} from "@/lib/pm.types";
-import { Button } from "@workspace/ui/components/button";
-import { Checkbox } from "@workspace/ui/components/checkbox";
-import {
-  Field,
-  FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
+} from "@/lib/pm-issues-cache"
+import { pmJson } from "@/lib/pm-browser"
+import type { IssueListRow, PmLabel, PmProject, PmStatus } from "@/lib/pm.types"
+import { Button } from "@workspace/ui/components/button"
+import { Checkbox } from "@workspace/ui/components/checkbox"
+import { Field, FieldLabel } from "@workspace/ui/components/field"
+import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
 import {
   Select,
   SelectItem,
   SelectPopup,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@workspace/ui/components/select"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,78 +40,78 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/menu";
+} from "@workspace/ui/components/menu"
 import {
   Popover,
   PopoverPopup,
   PopoverTrigger,
-} from "@workspace/ui/components/popover";
-import { UiIcon } from "@workspace/ui/components/ui-icon";
-import { buttonVariants } from "@workspace/ui/components/button.variants";
-import { cn } from "@workspace/ui/lib/utils";
+} from "@workspace/ui/components/popover"
+import { UiIcon } from "@workspace/ui/components/ui-icon"
+import { buttonVariants } from "@workspace/ui/components/button.variants"
+import { cn } from "@workspace/ui/lib/utils"
 import {
   FilterIcon,
   LayoutTwoColumnIcon,
   PlusSignIcon,
   Search01Icon,
   Table01Icon,
-} from "@hugeicons/core-free-icons";
+} from "@hugeicons/core-free-icons"
 
-type IssuesViewMode = "table" | "board";
+type IssuesViewMode = "table" | "board"
 
 export const IssuesBoard = () => {
-  const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
-  const activeOrganizationId = session?.session.activeOrganizationId ?? "";
-  const actorUserId = session?.user.id ?? "";
+  const queryClient = useQueryClient()
+  const { data: session } = authClient.useSession()
+  const activeOrganizationId = session?.session.activeOrganizationId ?? ""
+  const actorUserId = session?.user.id ?? ""
 
-  const [viewMode, setViewMode] = useState<IssuesViewMode>("board");
-  const [createIssueOpen, setCreateIssueOpen] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [statusId, setStatusId] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [labelId, setLabelId] = useState("");
-  const [assigneeId, setAssigneeId] = useState("");
-  const [includeArchived, setIncludeArchived] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
+  const [viewMode, setViewMode] = useState<IssuesViewMode>("board")
+  const [createIssueOpen, setCreateIssueOpen] = useState(false)
+  const [searchText, setSearchText] = useState("")
+  const [statusId, setStatusId] = useState("")
+  const [projectId, setProjectId] = useState("")
+  const [labelId, setLabelId] = useState("")
+  const [assigneeId, setAssigneeId] = useState("")
+  const [includeArchived, setIncludeArchived] = useState(false)
+  const [newTitle, setNewTitle] = useState("")
 
   const workspaceQuery = useQuery({
     queryKey: ["pm", "workspace"],
     queryFn: () => pmJson<{ organizationSlug: string | null }>("/workspace"),
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const statusesQuery = useQuery({
     queryKey: ["pm", "statuses"],
     queryFn: () => pmJson<PmStatus[]>("/statuses"),
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const labelsQuery = useQuery({
     queryKey: ["pm", "labels"],
     queryFn: () => pmJson<PmLabel[]>("/labels"),
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const projectsQuery = useQuery({
     queryKey: ["pm", "projects"],
     queryFn: () => pmJson<PmProject[]>("/projects"),
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const membersQuery = useQuery({
     queryKey: ["organization", "members", activeOrganizationId],
     queryFn: async () => {
       const response = await authClient.organization.listMembers({
         query: { organizationId: activeOrganizationId },
-      });
+      })
       if (response.error) {
-        throw new Error(response.error.message);
+        throw new Error(response.error.message)
       }
-      return response.data.members;
+      return response.data.members
     },
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const issuesQueryKey = useMemo(
     () => [
@@ -143,62 +135,62 @@ export const IssuesBoard = () => {
       searchText,
       statusId,
       viewMode,
-    ],
-  );
+    ]
+  )
 
   const issuesQuery = useQuery({
     queryKey: issuesQueryKey,
     queryFn: async () => {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams()
       if (searchText.trim().length > 0) {
-        params.set("q", searchText.trim());
+        params.set("q", searchText.trim())
       }
       if (statusId) {
-        params.set("statusId", statusId);
+        params.set("statusId", statusId)
       }
       if (projectId) {
-        params.set("projectId", projectId);
+        params.set("projectId", projectId)
       }
       if (labelId) {
-        params.set("labelId", labelId);
+        params.set("labelId", labelId)
       }
       if (assigneeId) {
-        params.set("assigneeId", assigneeId);
+        params.set("assigneeId", assigneeId)
       }
       if (includeArchived) {
-        params.set("includeArchived", "true");
+        params.set("includeArchived", "true")
       }
       if (viewMode === "board") {
-        params.set("limit", "200");
+        params.set("limit", "200")
       }
-      const qs = params.toString();
-      return pmJson<IssueListRow[]>(`/issues${qs ? `?${qs}` : ""}`);
+      const qs = params.toString()
+      return pmJson<IssueListRow[]>(`/issues${qs ? `?${qs}` : ""}`)
     },
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const createIssueMutation = useMutation({
     mutationFn: async (title: string) => {
       return pmJson<IssueListRow>("/issues", {
         method: "POST",
         body: JSON.stringify({ title }),
-      });
+      })
     },
     onMutate: async (title) => {
       await queryClient.cancelQueries({
         queryKey: [...PM_ISSUES_LIST_QUERY_PREFIX],
-      });
-      const prevLists = snapshotPmIssuesLists(queryClient);
+      })
+      const prevLists = snapshotPmIssuesLists(queryClient)
       const statuses =
-        queryClient.getQueryData<PmStatus[]>(["pm", "statuses"]) ?? [];
-      const defaultStatus = pickDefaultPmStatus(statuses);
+        queryClient.getQueryData<PmStatus[]>(["pm", "statuses"]) ?? []
+      const defaultStatus = pickDefaultPmStatus(statuses)
       if (!defaultStatus) {
-        return { prevLists, tempId: null as string | null };
+        return { prevLists, tempId: null as string | null }
       }
-      const trimmed = title.trim();
-      const tempId = crypto.randomUUID();
-      const now = new Date().toISOString();
-      const nextNumber = maxIssueNumberAcrossPmIssuesLists(queryClient) + 1;
+      const trimmed = title.trim()
+      const tempId = crypto.randomUUID()
+      const now = new Date().toISOString()
+      const nextNumber = maxIssueNumberAcrossPmIssuesLists(queryClient) + 1
       const optimistic: IssueListRow = {
         id: tempId,
         issueNumber: nextNumber,
@@ -214,113 +206,112 @@ export const IssuesBoard = () => {
         statusName: defaultStatus.name,
         statusCategory: defaultStatus.category,
         projectName: null,
-      };
+      }
       const entries = queryClient.getQueriesData<IssueListRow[]>({
         queryKey: [...PM_ISSUES_LIST_QUERY_PREFIX],
-      });
+      })
       for (const [key, list] of entries) {
         if (!list) {
-          continue;
+          continue
         }
-        const filters = parsePmIssuesListQueryFilters(key);
+        const filters = parsePmIssuesListQueryFilters(key)
         if (!filters) {
-          continue;
+          continue
         }
         if (!issueRowMatchesPmIssuesListFilters(filters, optimistic)) {
-          continue;
+          continue
         }
         queryClient.setQueryData(
           key,
-          sortIssuesListByUpdatedAtDesc([optimistic, ...list]),
-        );
+          sortIssuesListByUpdatedAtDesc([optimistic, ...list])
+        )
       }
-      return { prevLists, tempId };
+      return { prevLists, tempId }
     },
     onError: (_error, _title, context) => {
       if (context?.prevLists) {
-        restorePmIssuesListsSnapshot(queryClient, context.prevLists);
+        restorePmIssuesListsSnapshot(queryClient, context.prevLists)
       }
     },
     onSuccess: (row, _title, context) => {
-      setNewTitle("");
-      setCreateIssueOpen(false);
+      setNewTitle("")
+      setCreateIssueOpen(false)
       if (context?.tempId) {
-        finalizeOptimisticIssueCreate(queryClient, context.tempId, row);
-        return;
+        finalizeOptimisticIssueCreate(queryClient, context.tempId, row)
+        return
       }
       void queryClient.invalidateQueries({
         queryKey: [...PM_ISSUES_LIST_QUERY_PREFIX],
-      });
+      })
     },
-  });
+  })
 
-  const slug = workspaceQuery.data?.organizationSlug ?? "org";
+  const slug = workspaceQuery.data?.organizationSlug ?? "org"
 
   if (!activeOrganizationId) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Select a workspace from the header to load issues.
       </p>
-    );
+    )
   }
 
-  const statuses = statusesQuery.data ?? [];
-  const projects = projectsQuery.data ?? [];
-  const labels = labelsQuery.data ?? [];
-  const members = membersQuery.data ?? [];
+  const statuses = statusesQuery.data ?? []
+  const projects = projectsQuery.data ?? []
+  const labels = labelsQuery.data ?? []
+  const members = membersQuery.data ?? []
 
   const statusFilterLabel = statusId
     ? (statuses.find((row) => row.id === statusId)?.name ?? "Unknown status")
-    : null;
+    : null
   const projectFilterLabel = projectId
     ? (projects.find((row) => row.id === projectId)?.name ?? "Unknown project")
-    : null;
-  const labelRow = labelId ? labels.find((row) => row.id === labelId) : undefined;
-  const labelFilterLabel = labelId
-    ? (labelRow?.name ?? "Unknown label")
-    : null;
+    : null
+  const labelRow = labelId
+    ? labels.find((row) => row.id === labelId)
+    : undefined
+  const labelFilterLabel = labelId ? (labelRow?.name ?? "Unknown label") : null
   const assigneeMember = assigneeId
     ? members.find((row) => row.user.id === assigneeId)
-    : undefined;
+    : undefined
   const assigneeFilterLabel = assigneeMember
     ? (assigneeMember.user.name ?? assigneeMember.user.email)
-    : null;
+    : null
 
   const needsStatusFilterFallback =
-    Boolean(statusId) && !statuses.some((row) => row.id === statusId);
+    Boolean(statusId) && !statuses.some((row) => row.id === statusId)
   const needsProjectFilterFallback =
-    Boolean(projectId) && !projects.some((row) => row.id === projectId);
+    Boolean(projectId) && !projects.some((row) => row.id === projectId)
   const needsLabelFilterFallback =
-    Boolean(labelId) && !labels.some((row) => row.id === labelId);
+    Boolean(labelId) && !labels.some((row) => row.id === labelId)
   const needsAssigneeFilterFallback =
-    Boolean(assigneeId) &&
-    !members.some((row) => row.user.id === assigneeId);
+    Boolean(assigneeId) && !members.some((row) => row.user.id === assigneeId)
 
   const hasStructuredFilters =
     Boolean(statusId) ||
     Boolean(projectId) ||
     Boolean(labelId) ||
     Boolean(assigneeId) ||
-    includeArchived;
+    includeArchived
 
-  const hasSearchQuery = Boolean(searchText.trim());
+  const hasSearchQuery = Boolean(searchText.trim())
 
   const handleCreateIssue = () => {
-    const trimmed = newTitle.trim();
+    const trimmed = newTitle.trim()
     if (!trimmed) {
-      return;
+      return
     }
-    createIssueMutation.mutate(trimmed);
-  };
+    createIssueMutation.mutate(trimmed)
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
       <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="font-heading text-2xl font-medium">Issues</h1>
-          <p className="text-muted-foreground text-sm">
-            Keys use{" "}
-            <span className="font-mono text-xs">{slug}</span> and a number.
+          <p className="text-sm text-muted-foreground">
+            Keys use <span className="font-mono text-xs">{slug}</span> and a
+            number.
           </p>
         </div>
         <div
@@ -333,7 +324,7 @@ export const IssuesBoard = () => {
               aria-label="Search issues"
               className={cn(
                 buttonVariants({ variant: "ghost", size: "icon" }),
-                "relative",
+                "relative"
               )}
               type="button"
             >
@@ -341,11 +332,14 @@ export const IssuesBoard = () => {
               {hasSearchQuery ? (
                 <span
                   aria-hidden
-                  className="bg-primary ring-background absolute inset-e-1 top-1 size-2 rounded-full ring-2"
+                  className="inset-e-1 absolute top-1 size-2 rounded-full bg-primary ring-2 ring-background"
                 />
               ) : null}
             </PopoverTrigger>
-            <PopoverPopup align="end" className="w-[min(22rem,calc(100vw-2rem))]">
+            <PopoverPopup
+              align="end"
+              className="w-[min(22rem,calc(100vw-2rem))]"
+            >
               <div className="flex flex-col gap-2">
                 <Field name="filter-search">
                   <FieldLabel>Search</FieldLabel>
@@ -353,7 +347,7 @@ export const IssuesBoard = () => {
                     aria-label="Search issues"
                     autoFocus
                     onChange={(event) => {
-                      setSearchText(event.target.value);
+                      setSearchText(event.target.value)
                     }}
                     placeholder="Title or description"
                     value={searchText}
@@ -368,7 +362,7 @@ export const IssuesBoard = () => {
               aria-label="Filter issues"
               className={cn(
                 buttonVariants({ variant: "ghost", size: "icon" }),
-                "relative",
+                "relative"
               )}
               type="button"
             >
@@ -376,7 +370,7 @@ export const IssuesBoard = () => {
               {hasStructuredFilters ? (
                 <span
                   aria-hidden
-                  className="bg-primary ring-background absolute inset-e-1 top-1 size-2 rounded-full ring-2"
+                  className="inset-e-1 absolute top-1 size-2 rounded-full bg-primary ring-2 ring-background"
                 />
               ) : null}
             </PopoverTrigger>
@@ -389,7 +383,7 @@ export const IssuesBoard = () => {
                   <FieldLabel>Status</FieldLabel>
                   <Select
                     onValueChange={(next) => {
-                      setStatusId(next as string);
+                      setStatusId(next as string)
                     }}
                     value={statusId}
                   >
@@ -422,7 +416,7 @@ export const IssuesBoard = () => {
                   <FieldLabel>Project</FieldLabel>
                   <Select
                     onValueChange={(next) => {
-                      setProjectId(next as string);
+                      setProjectId(next as string)
                     }}
                     value={projectId}
                   >
@@ -455,7 +449,7 @@ export const IssuesBoard = () => {
                   <FieldLabel>Label</FieldLabel>
                   <Select
                     onValueChange={(next) => {
-                      setLabelId(next as string);
+                      setLabelId(next as string)
                     }}
                     value={labelId}
                   >
@@ -469,7 +463,7 @@ export const IssuesBoard = () => {
                             {labelRow ? (
                               <span
                                 aria-hidden
-                                className="ring-background size-2.5 shrink-0 rounded-full border border-border ring-1"
+                                className="size-2.5 shrink-0 rounded-full border border-border ring-1 ring-background"
                                 style={{ backgroundColor: labelRow.color }}
                               />
                             ) : null}
@@ -492,7 +486,7 @@ export const IssuesBoard = () => {
                           <span className="flex min-w-0 items-center gap-2">
                             <span
                               aria-hidden
-                              className="ring-background size-2.5 shrink-0 rounded-full border border-border ring-1"
+                              className="size-2.5 shrink-0 rounded-full border border-border ring-1 ring-background"
                               style={{ backgroundColor: label.color }}
                             />
                             <span className="truncate">{label.name}</span>
@@ -506,7 +500,7 @@ export const IssuesBoard = () => {
                   <FieldLabel>Assignee</FieldLabel>
                   <Select
                     onValueChange={(next) => {
-                      setAssigneeId(next as string);
+                      setAssigneeId(next as string)
                     }}
                     value={assigneeId}
                   >
@@ -541,7 +535,7 @@ export const IssuesBoard = () => {
                   <Checkbox
                     checked={includeArchived}
                     onCheckedChange={(checked) => {
-                      setIncludeArchived(checked === true);
+                      setIncludeArchived(checked === true)
                     }}
                   />
                   Include archived
@@ -556,7 +550,11 @@ export const IssuesBoard = () => {
               className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
               type="button"
             >
-              <UiIcon aria-hidden className="size-4" icon={LayoutTwoColumnIcon} />
+              <UiIcon
+                aria-hidden
+                className="size-4"
+                icon={LayoutTwoColumnIcon}
+              />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-44">
               <DropdownMenuGroup>
@@ -564,7 +562,7 @@ export const IssuesBoard = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup
                   onValueChange={(next) => {
-                    setViewMode(next as IssuesViewMode);
+                    setViewMode(next as IssuesViewMode)
                   }}
                   value={viewMode}
                 >
@@ -593,10 +591,7 @@ export const IssuesBoard = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Popover
-            onOpenChange={setCreateIssueOpen}
-            open={createIssueOpen}
-          >
+          <Popover onOpenChange={setCreateIssueOpen} open={createIssueOpen}>
             <PopoverTrigger
               aria-label="Create issue"
               className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
@@ -604,7 +599,10 @@ export const IssuesBoard = () => {
             >
               <UiIcon aria-hidden className="size-4" icon={PlusSignIcon} />
             </PopoverTrigger>
-            <PopoverPopup align="end" className="w-[min(22rem,calc(100vw-2rem))]">
+            <PopoverPopup
+              align="end"
+              className="w-[min(22rem,calc(100vw-2rem))]"
+            >
               <Field name="new-issue-title">
                 <FieldLabel>New issue</FieldLabel>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -612,12 +610,12 @@ export const IssuesBoard = () => {
                     aria-label="Issue title"
                     className="sm:flex-1"
                     onChange={(event) => {
-                      setNewTitle(event.target.value);
+                      setNewTitle(event.target.value)
                     }}
                     onKeyDown={(event) => {
                       if (event.key === "Enter") {
-                        event.preventDefault();
-                        handleCreateIssue();
+                        event.preventDefault()
+                        handleCreateIssue()
                       }
                     }}
                     placeholder="Title"
@@ -638,14 +636,14 @@ export const IssuesBoard = () => {
       </div>
 
       {issuesQuery.isError ? (
-        <p className="text-destructive shrink-0 text-sm" role="alert">
+        <p className="shrink-0 text-sm text-destructive" role="alert">
           {(issuesQuery.error as Error).message}
         </p>
       ) : null}
 
       {viewMode === "board" ? (
         issuesQuery.isPending ? (
-          <p className="text-muted-foreground shrink-0 text-sm">
+          <p className="shrink-0 text-sm text-muted-foreground">
             Loading issues…
           </p>
         ) : (
@@ -658,7 +656,7 @@ export const IssuesBoard = () => {
       ) : (
         <div className="min-h-0 flex-1 overflow-auto rounded-lg border">
           <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+            <thead className="bg-muted/40 text-xs text-muted-foreground uppercase">
               <tr>
                 <th className="px-3 py-2 font-medium">Key</th>
                 <th className="px-3 py-2 font-medium">Title</th>
@@ -671,7 +669,7 @@ export const IssuesBoard = () => {
             <tbody>
               {issuesQuery.isPending ? (
                 <tr>
-                  <td className="text-muted-foreground px-3 py-4" colSpan={6}>
+                  <td className="px-3 py-4 text-muted-foreground" colSpan={6}>
                     Loading issues…
                   </td>
                 </tr>
@@ -694,17 +692,17 @@ export const IssuesBoard = () => {
                       {issue.title}
                     </Link>
                     {issue.archivedAt ? (
-                      <span className="text-muted-foreground ms-2 text-xs">
+                      <span className="ms-2 text-xs text-muted-foreground">
                         Archived
                       </span>
                     ) : null}
                   </td>
                   <td className="px-3 py-2">{issue.statusName}</td>
-                  <td className="text-muted-foreground px-3 py-2">
+                  <td className="px-3 py-2 text-muted-foreground">
                     {issue.projectName ?? "—"}
                   </td>
                   <td className="px-3 py-2 capitalize">{issue.priority}</td>
-                  <td className="text-muted-foreground px-3 py-2 text-xs">
+                  <td className="px-3 py-2 text-xs text-muted-foreground">
                     {new Date(issue.updatedAt).toLocaleString()}
                   </td>
                 </tr>
@@ -712,7 +710,7 @@ export const IssuesBoard = () => {
               {!issuesQuery.isPending &&
               (issuesQuery.data ?? []).length === 0 ? (
                 <tr>
-                  <td className="text-muted-foreground px-3 py-6" colSpan={6}>
+                  <td className="px-3 py-6 text-muted-foreground" colSpan={6}>
                     No issues match these filters.
                   </td>
                 </tr>
@@ -722,5 +720,5 @@ export const IssuesBoard = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}

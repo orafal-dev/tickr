@@ -1,20 +1,20 @@
-import Link from "next/link";
-import { Suspense } from "react";
+import Link from "next/link"
+import { Suspense } from "react"
 
-import { RegisterForm } from "@/app/(auth)/register/register-form";
-import { AuthOAuthButtons } from "@/components/auth-oauth-buttons";
-import { getConfiguredOAuthProviders } from "@/lib/oauth-providers.server";
-import { ORGANIZATION_ONBOARDING_PATH } from "@/lib/onboarding-constants";
+import { RegisterForm } from "@/app/(auth)/register/register-form"
+import { AuthOAuthButtons } from "@/components/auth-oauth-buttons"
+import { getConfiguredOAuthProviders } from "@/lib/oauth-providers.server"
+import { ORGANIZATION_ONBOARDING_PATH } from "@/lib/onboarding-constants"
 import {
   Card,
   CardDescription,
   CardHeader,
   CardPanel,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@workspace/ui/components/card"
 
 export default function RegisterPage() {
-  const oauthProviders = getConfiguredOAuthProviders();
+  const oauthProviders = getConfiguredOAuthProviders()
   return (
     <Card>
       <CardHeader>
@@ -24,12 +24,14 @@ export default function RegisterPage() {
         </CardDescription>
       </CardHeader>
       <CardPanel className="flex flex-col gap-4">
-        <Suspense fallback={<p className="text-muted-foreground text-sm">Loading…</p>}>
+        <Suspense
+          fallback={<p className="text-sm text-muted-foreground">Loading…</p>}
+        >
           <RegisterForm />
         </Suspense>
         {oauthProviders.length > 0 ? (
           <Suspense
-            fallback={<p className="text-muted-foreground text-sm">Loading…</p>}
+            fallback={<p className="text-sm text-muted-foreground">Loading…</p>}
           >
             <AuthOAuthButtons
               defaultPostAuthPath={ORGANIZATION_ONBOARDING_PATH}
@@ -37,10 +39,10 @@ export default function RegisterPage() {
             />
           </Suspense>
         ) : null}
-        <p className="text-muted-foreground text-center text-sm">
+        <p className="text-center text-sm text-muted-foreground">
           Already registered?{" "}
           <Link
-            className="text-foreground font-medium underline underline-offset-4"
+            className="font-medium text-foreground underline underline-offset-4"
             href="/login"
           >
             Sign in
@@ -48,5 +50,5 @@ export default function RegisterPage() {
         </p>
       </CardPanel>
     </Card>
-  );
+  )
 }

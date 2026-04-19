@@ -1,4 +1,4 @@
-import { HugeiconsIcon, type HugeiconsIconProps } from "@hugeicons/react";
+import { HugeiconsIcon, type HugeiconsIconProps } from "@hugeicons/react"
 
 export const UiIcon = ({
   strokeWidth = 1.5,
@@ -12,6 +12,6 @@ export const UiIcon = ({
     strokeWidth={strokeWidth}
     {...props}
   />
-);
+)
 
-export type { HugeiconsIconProps as UiIconProps };
+export type { HugeiconsIconProps as UiIconProps }

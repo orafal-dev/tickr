@@ -1,12 +1,12 @@
-import { Suspense } from "react";
+import { Suspense } from "react"
 
-import { AcceptInvitationView } from "@/app/accept-invitation/accept-invitation-view";
+import { AcceptInvitationView } from "@/app/accept-invitation/accept-invitation-view"
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@workspace/ui/components/card"
 
 const AcceptInvitationFallback = () => {
   return (
@@ -16,8 +16,8 @@ const AcceptInvitationFallback = () => {
         <CardDescription>Loading…</CardDescription>
       </CardHeader>
     </Card>
-  );
-};
+  )
+}
 
 export default function AcceptInvitationPage() {
   return (
@@ -28,5 +28,5 @@ export default function AcceptInvitationPage() {
         </Suspense>
       </div>
     </div>
-  );
+  )
 }

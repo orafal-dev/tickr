@@ -1,61 +1,61 @@
-"use client";
+"use client"
 
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client"
 import {
   Select,
   SelectItem,
   SelectPopup,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@workspace/ui/components/select"
 
 export const DashboardOrganizationSwitcher = () => {
-  const router = useRouter();
-  const { data: session, isPending: sessionPending } = authClient.useSession();
-  const organizations = authClient.useListOrganizations();
-  const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter()
+  const { data: session, isPending: sessionPending } = authClient.useSession()
+  const organizations = authClient.useListOrganizations()
+  const [isSaving, setIsSaving] = useState(false)
 
-  const activeOrganizationId = session?.session.activeOrganizationId ?? "";
+  const activeOrganizationId = session?.session.activeOrganizationId ?? ""
 
   const organizationOptions = useMemo(() => {
     if (!organizations.data || organizations.error) {
-      return [];
+      return []
     }
     return organizations.data.map((organization) => ({
       id: organization.id,
       name: organization.name,
-    }));
-  }, [organizations.data, organizations.error]);
+    }))
+  }, [organizations.data, organizations.error])
 
   useEffect(() => {
     if (sessionPending || organizations.isPending) {
-      return;
+      return
     }
     if (!session?.user) {
-      return;
+      return
     }
     if (session.session.activeOrganizationId) {
-      return;
+      return
     }
-    const firstId = organizations.data?.[0]?.id;
+    const firstId = organizations.data?.[0]?.id
     if (!firstId) {
-      return;
+      return
     }
-    let cancelled = false;
+    let cancelled = false
     void (async () => {
       const result = await authClient.organization.setActive({
         organizationId: firstId,
-      });
+      })
       if (!cancelled && !result.error) {
-        router.refresh();
+        router.refresh()
       }
-    })();
+    })()
     return () => {
-      cancelled = true;
-    };
+      cancelled = true
+    }
   }, [
     organizations.data,
     organizations.isPending,
@@ -63,69 +63,68 @@ export const DashboardOrganizationSwitcher = () => {
     router,
     session,
     sessionPending,
-  ]);
+  ])
 
   const handleOrganizationChange = useCallback(
     async (nextId: string) => {
       if (!nextId || nextId === activeOrganizationId) {
-        return;
+        return
       }
-      setIsSaving(true);
+      setIsSaving(true)
       try {
         const result = await authClient.organization.setActive({
           organizationId: nextId,
-        });
+        })
         if (!result.error) {
-          router.refresh();
+          router.refresh()
         }
       } finally {
-        setIsSaving(false);
+        setIsSaving(false)
       }
     },
-    [activeOrganizationId, router],
-  );
+    [activeOrganizationId, router]
+  )
 
-  const selectValue =
-    activeOrganizationId || organizationOptions[0]?.id || "";
+  const selectValue = activeOrganizationId || organizationOptions[0]?.id || ""
 
   const workspaceLabel = useMemo(() => {
     const match = organizationOptions.find(
-      (organization) => organization.id === selectValue,
-    );
-    return match?.name ?? "Workspace";
-  }, [organizationOptions, selectValue]);
+      (organization) => organization.id === selectValue
+    )
+    return match?.name ?? "Workspace"
+  }, [organizationOptions, selectValue])
 
   if (sessionPending || organizations.isPending) {
     return (
-      <span className="text-muted-foreground text-xs">Loading workspaces…</span>
-    );
+      <span className="text-xs text-muted-foreground">Loading workspaces…</span>
+    )
   }
 
   if (!organizations.data || organizations.data.length === 0) {
     return (
-      <span className="text-muted-foreground text-xs">
+      <span className="text-xs text-muted-foreground">
         Create a workspace from onboarding to use issues.
       </span>
-    );
+    )
   }
 
   return (
     <div className="flex items-center gap-2 text-xs">
       <span
-        className="text-muted-foreground shrink-0"
+        className="shrink-0 text-muted-foreground"
         id="dashboard-workspace-field-label"
       >
         Workspace
       </span>
       <Select
         onValueChange={(next) => {
-          void handleOrganizationChange(next as string);
+          void handleOrganizationChange(next as string)
         }}
         value={selectValue}
       >
         <SelectTrigger
           aria-labelledby="dashboard-workspace-field-label"
-          className="max-w-[14rem] min-w-0 w-[min(100%,14rem)]"
+          className="w-[min(100%,14rem)] max-w-[14rem] min-w-0"
           disabled={isSaving}
           size="sm"
         >
@@ -140,5 +139,5 @@ export const DashboardOrganizationSwitcher = () => {
         </SelectPopup>
       </Select>
     </div>
-  );
-};
+  )
+}

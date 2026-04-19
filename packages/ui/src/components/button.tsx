@@ -1,17 +1,17 @@
-"use client";
+"use client"
 
-import { mergeProps } from "@base-ui/react/merge-props";
-import { useRender } from "@base-ui/react/use-render";
-import { type VariantProps } from "class-variance-authority";
-import type * as React from "react";
-import { buttonVariants } from "./button.variants";
-import { cn } from "@workspace/ui/lib/utils";
-import { Spinner } from "@workspace/ui/components/spinner";
+import { mergeProps } from "@base-ui/react/merge-props"
+import { useRender } from "@base-ui/react/use-render"
+import { type VariantProps } from "class-variance-authority"
+import type * as React from "react"
+import { buttonVariants } from "./button.variants"
+import { cn } from "@workspace/ui/lib/utils"
+import { Spinner } from "@workspace/ui/components/spinner"
 
 export interface ButtonProps extends useRender.ComponentProps<"button"> {
-  variant?: VariantProps<typeof buttonVariants>["variant"];
-  size?: VariantProps<typeof buttonVariants>["size"];
-  loading?: boolean;
+  variant?: VariantProps<typeof buttonVariants>["variant"]
+  size?: VariantProps<typeof buttonVariants>["size"]
+  loading?: boolean
 }
 
 export function Button({
@@ -24,9 +24,9 @@ export function Button({
   disabled: disabledProp,
   ...props
 }: ButtonProps): React.ReactElement {
-  const isDisabled: boolean = Boolean(loading || disabledProp);
+  const isDisabled: boolean = Boolean(loading || disabledProp)
   const typeValue: React.ButtonHTMLAttributes<HTMLButtonElement>["type"] =
-    render ? undefined : "button";
+    render ? undefined : "button"
 
   const defaultProps = {
     children: (
@@ -46,11 +46,11 @@ export function Button({
     "data-slot": "button",
     disabled: isDisabled,
     type: typeValue,
-  };
+  }
 
   return useRender({
     defaultTagName: "button",
     props: mergeProps<"button">(defaultProps, props),
     render,
-  });
+  })
 }

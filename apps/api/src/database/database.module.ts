@@ -1,7 +1,7 @@
-import { Global, Module } from '@nestjs/common';
-import { Pool } from 'pg';
+import { Global, Module } from "@nestjs/common"
+import { Pool } from "pg"
 
-import { DATABASE_POOL } from './database.tokens';
+import { DATABASE_POOL } from "./database.tokens"
 
 @Global()
 @Module({
@@ -9,11 +9,11 @@ import { DATABASE_POOL } from './database.tokens';
     {
       provide: DATABASE_POOL,
       useFactory: (): Pool => {
-        const connectionString = process.env.DATABASE_URL;
+        const connectionString = process.env.DATABASE_URL
         if (!connectionString || connectionString.length === 0) {
-          throw new Error('DATABASE_URL is required for the API process.');
+          throw new Error("DATABASE_URL is required for the API process.")
         }
-        return new Pool({ connectionString });
+        return new Pool({ connectionString })
       },
     },
   ],

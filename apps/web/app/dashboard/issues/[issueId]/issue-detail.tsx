@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useEffect, useMemo, useState } from "react"
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client"
 import {
   applyRecordToIssueListRow,
   patchIssueAcrossPmIssuesLists,
@@ -13,67 +13,58 @@ import {
   replaceIssueRowAcrossPmIssuesLists,
   restorePmIssuesListsSnapshot,
   snapshotPmIssuesLists,
-} from "@/lib/pm-issues-cache";
-import { pmJson } from "@/lib/pm-browser";
+} from "@/lib/pm-issues-cache"
+import { pmJson } from "@/lib/pm-browser"
 import type {
   IssueDetailResponse,
   IssueListRow,
   PmLabel,
   PmProject,
   PmStatus,
-} from "@/lib/pm.types";
-import { Button } from "@workspace/ui/components/button";
-import { Checkbox } from "@workspace/ui/components/checkbox";
-import {
-  Field,
-  FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import { RichTextDisplay } from "@workspace/ui/components/rich-text-display";
-import { RichTextEditor } from "@workspace/ui/components/rich-text-editor";
+} from "@/lib/pm.types"
+import { Button } from "@workspace/ui/components/button"
+import { Checkbox } from "@workspace/ui/components/checkbox"
+import { Field, FieldLabel } from "@workspace/ui/components/field"
+import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
+import { RichTextDisplay } from "@workspace/ui/components/rich-text-display"
+import { RichTextEditor } from "@workspace/ui/components/rich-text-editor"
 import {
   Select,
   SelectItem,
   SelectPopup,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@workspace/ui/components/select"
 import {
   isStoredRichTextContentEmpty,
   stringifyStoredRichTextInput,
-} from "@workspace/ui/lib/rich-text-tiptap";
+} from "@workspace/ui/lib/rich-text-tiptap"
 
 type CommentRow = Readonly<{
-  id: string;
-  body: string;
-  authorUserId: string;
-  createdAt: string;
-}>;
+  id: string
+  body: string
+  authorUserId: string
+  createdAt: string
+}>
 
-const PRIORITY_ORDER = [
-  "none",
-  "low",
-  "medium",
-  "high",
-  "urgent",
-] as const;
+const PRIORITY_ORDER = ["none", "low", "medium", "high", "urgent"] as const
 
 const formatPriorityLabel = (priority: string) => {
-  const normalized = priority.trim().toLowerCase();
-  const known = PRIORITY_ORDER.find((p) => p === normalized);
+  const normalized = priority.trim().toLowerCase()
+  const known = PRIORITY_ORDER.find((p) => p === normalized)
   if (known) {
-    return known.charAt(0).toUpperCase() + known.slice(1);
+    return known.charAt(0).toUpperCase() + known.slice(1)
   }
   if (!priority) {
-    return "None";
+    return "None"
   }
   return priority
     .split(/[\s_-]+/)
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-};
+    .join(" ")
+}
 
 /**
  * Mounted only when `issue` exists, with `key={issue.id}` so title/description
@@ -85,30 +76,30 @@ const IssueTitleDescriptionBlock = ({
   patchPending,
   onPatch,
 }: Readonly<{
-  issue: IssueListRow;
-  patchPending: boolean;
-  onPatch: (body: Record<string, unknown>) => void;
+  issue: IssueListRow
+  patchPending: boolean
+  onPatch: (body: Record<string, unknown>) => void
 }>) => {
-  const [title, setTitle] = useState(issue.title);
+  const [title, setTitle] = useState(issue.title)
   const [description, setDescription] = useState(() =>
-    stringifyStoredRichTextInput(issue.description),
-  );
+    stringifyStoredRichTextInput(issue.description)
+  )
 
   useEffect(() => {
-    setTitle(issue.title);
-    setDescription(stringifyStoredRichTextInput(issue.description));
-  }, [issue.description, issue.id, issue.title]);
+    setTitle(issue.title)
+    setDescription(stringifyStoredRichTextInput(issue.description))
+  }, [issue.description, issue.id, issue.title])
 
   const handleSaveCore = () => {
     const descriptionPayload =
       typeof description === "string"
         ? description
-        : stringifyStoredRichTextInput(description);
+        : stringifyStoredRichTextInput(description)
     onPatch({
       title: title.trim(),
       description: descriptionPayload,
-    });
-  };
+    })
+  }
 
   return (
     <div className="flex flex-col gap-3 lg:col-span-2">
@@ -117,7 +108,7 @@ const IssueTitleDescriptionBlock = ({
         <Input
           aria-label="Issue title"
           onChange={(event) => {
-            setTitle(event.target.value);
+            setTitle(event.target.value)
           }}
           value={title}
         />
@@ -132,133 +123,125 @@ const IssueTitleDescriptionBlock = ({
         />
       </Field>
       <div>
-        <Button
-          disabled={patchPending}
-          onClick={handleSaveCore}
-          type="button"
-        >
+        <Button disabled={patchPending} onClick={handleSaveCore} type="button">
           Save title & description
         </Button>
       </div>
     </div>
-  );
-};
+  )
+}
 
 export const IssueDetail = () => {
-  const params = useParams();
-  const issueId = String(params.issueId ?? "");
-  const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
-  const activeOrganizationId = session?.session.activeOrganizationId ?? "";
-  const actorUserId = session?.user.id ?? "";
+  const params = useParams()
+  const issueId = String(params.issueId ?? "")
+  const queryClient = useQueryClient()
+  const { data: session } = authClient.useSession()
+  const activeOrganizationId = session?.session.activeOrganizationId ?? ""
+  const actorUserId = session?.user.id ?? ""
 
   const workspaceQuery = useQuery({
     queryKey: ["pm", "workspace"],
     queryFn: () => pmJson<{ organizationSlug: string | null }>("/workspace"),
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const detailQuery = useQuery({
     queryKey: ["pm", "issue", issueId],
     queryFn: () => pmJson<IssueDetailResponse>(`/issues/${issueId}`),
     enabled: Boolean(activeOrganizationId) && issueId.length > 0,
-  });
+  })
 
   const statusesQuery = useQuery({
     queryKey: ["pm", "statuses"],
     queryFn: () => pmJson<PmStatus[]>("/statuses"),
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const labelsQuery = useQuery({
     queryKey: ["pm", "labels"],
     queryFn: () => pmJson<PmLabel[]>("/labels"),
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const projectsQuery = useQuery({
     queryKey: ["pm", "projects"],
     queryFn: () => pmJson<PmProject[]>("/projects"),
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const membersQuery = useQuery({
     queryKey: ["organization", "members", activeOrganizationId],
     queryFn: async () => {
       const response = await authClient.organization.listMembers({
         query: { organizationId: activeOrganizationId },
-      });
+      })
       if (response.error) {
-        throw new Error(response.error.message);
+        throw new Error(response.error.message)
       }
-      return response.data.members;
+      return response.data.members
     },
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const commentsQuery = useQuery({
     queryKey: ["pm", "issue", issueId, "comments"],
     queryFn: () => pmJson<CommentRow[]>(`/issues/${issueId}/comments`),
     enabled: Boolean(activeOrganizationId) && issueId.length > 0,
-  });
+  })
 
-  const issue = detailQuery.data?.issue;
+  const issue = detailQuery.data?.issue
 
-  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
-  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
-  const [commentBody, setCommentBody] = useState("");
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([])
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([])
+  const [commentBody, setCommentBody] = useState("")
 
   useEffect(() => {
     if (!detailQuery.data) {
-      return;
+      return
     }
-    setSelectedAssignees(
-      detailQuery.data.assignees.map((row) => row.userId),
-    );
-    setSelectedLabels(detailQuery.data.labels.map((label) => label.id));
-  }, [detailQuery.data]);
+    setSelectedAssignees(detailQuery.data.assignees.map((row) => row.userId))
+    setSelectedLabels(detailQuery.data.labels.map((label) => label.id))
+  }, [detailQuery.data])
 
-  const slug = workspaceQuery.data?.organizationSlug ?? "org";
-  const issueKey = issue
-    ? `${slug.toUpperCase()}-${issue.issueNumber}`
-    : "";
+  const slug = workspaceQuery.data?.organizationSlug ?? "org"
+  const issueKey = issue ? `${slug.toUpperCase()}-${issue.issueNumber}` : ""
 
   const patchIssueMutation = useMutation({
     mutationFn: async (body: Record<string, unknown>) => {
       return pmJson<IssueListRow>(`/issues/${issueId}`, {
         method: "PATCH",
         body: JSON.stringify(body),
-      });
+      })
     },
     onMutate: async (body) => {
-      await queryClient.cancelQueries({ queryKey: ["pm", "issue", issueId] });
+      await queryClient.cancelQueries({ queryKey: ["pm", "issue", issueId] })
       await queryClient.cancelQueries({
         queryKey: [...PM_ISSUES_LIST_QUERY_PREFIX],
-      });
+      })
       const prevDetail = queryClient.getQueryData<IssueDetailResponse>([
         "pm",
         "issue",
         issueId,
-      ]);
-      const prevLists = snapshotPmIssuesLists(queryClient);
-      const statuses = statusesQuery.data ?? [];
-      const projects = projectsQuery.data ?? [];
-      const labels = labelsQuery.data ?? [];
+      ])
+      const prevLists = snapshotPmIssuesLists(queryClient)
+      const statuses = statusesQuery.data ?? []
+      const projects = projectsQuery.data ?? []
+      const labels = labelsQuery.data ?? []
       if (prevDetail) {
         const nextIssue = applyRecordToIssueListRow(prevDetail.issue, body, {
           statuses,
           projects,
-        });
-        let nextLabels = prevDetail.labels;
+        })
+        let nextLabels = prevDetail.labels
         if (Array.isArray(body.labelIds)) {
-          const labelSet = new Set(body.labelIds.map((id) => String(id)));
-          nextLabels = labels.filter((label) => labelSet.has(label.id));
+          const labelSet = new Set(body.labelIds.map((id) => String(id)))
+          nextLabels = labels.filter((label) => labelSet.has(label.id))
         }
-        let nextAssignees = prevDetail.assignees;
+        let nextAssignees = prevDetail.assignees
         if (Array.isArray(body.assigneeIds)) {
           nextAssignees = body.assigneeIds.map((userId) => ({
             userId: String(userId),
-          }));
+          }))
         }
         queryClient.setQueryData<IssueDetailResponse>(
           ["pm", "issue", issueId],
@@ -267,24 +250,24 @@ export const IssueDetail = () => {
             issue: nextIssue,
             labels: nextLabels,
             assignees: nextAssignees,
-          },
-        );
+          }
+        )
       }
       patchIssueAcrossPmIssuesLists(
         queryClient,
         issueId,
         body,
         { statuses, projects },
-        prevDetail?.issue ?? null,
-      );
-      return { prevDetail, prevLists };
+        prevDetail?.issue ?? null
+      )
+      return { prevDetail, prevLists }
     },
     onError: (_error, _body, context) => {
       if (context?.prevDetail !== undefined) {
-        queryClient.setQueryData(["pm", "issue", issueId], context.prevDetail);
+        queryClient.setQueryData(["pm", "issue", issueId], context.prevDetail)
       }
       if (context?.prevLists) {
-        restorePmIssuesListsSnapshot(queryClient, context.prevLists);
+        restorePmIssuesListsSnapshot(queryClient, context.prevLists)
       }
     },
     onSuccess: (updatedRow) => {
@@ -292,158 +275,160 @@ export const IssueDetail = () => {
         ["pm", "issue", issueId],
         (previous: IssueDetailResponse | undefined) => {
           if (!previous) {
-            return previous;
+            return previous
           }
           return {
             ...previous,
             issue: { ...previous.issue, ...updatedRow },
-          };
-        },
-      );
-      replaceIssueRowAcrossPmIssuesLists(queryClient, issueId, updatedRow);
+          }
+        }
+      )
+      replaceIssueRowAcrossPmIssuesLists(queryClient, issueId, updatedRow)
     },
-  });
+  })
 
   const addCommentMutation = useMutation({
     mutationFn: async (bodyJson: string) => {
       return pmJson<CommentRow>(`/issues/${issueId}/comments`, {
         method: "POST",
         body: JSON.stringify({ body: bodyJson }),
-      });
+      })
     },
     onMutate: async (bodyJson) => {
       await queryClient.cancelQueries({
         queryKey: ["pm", "issue", issueId, "comments"],
-      });
+      })
       const prevComments =
         queryClient.getQueryData<CommentRow[]>([
           "pm",
           "issue",
           issueId,
           "comments",
-        ]) ?? [];
-      const tempId = `optimistic-comment:${crypto.randomUUID()}`;
-      const now = new Date().toISOString();
+        ]) ?? []
+      const tempId = `optimistic-comment:${crypto.randomUUID()}`
+      const now = new Date().toISOString()
       const optimistic: CommentRow = {
         id: tempId,
         body: bodyJson,
         authorUserId: actorUserId,
         createdAt: now,
-      };
+      }
       queryClient.setQueryData<CommentRow[]>(
         ["pm", "issue", issueId, "comments"],
-        [...prevComments, optimistic],
-      );
-      return { prevComments, tempId };
+        [...prevComments, optimistic]
+      )
+      return { prevComments, tempId }
     },
     onError: (_error, _body, context) => {
       queryClient.setQueryData(
         ["pm", "issue", issueId, "comments"],
-        context?.prevComments ?? [],
-      );
+        context?.prevComments ?? []
+      )
     },
     onSuccess: (row, _body, context) => {
-      setCommentBody("");
+      setCommentBody("")
       queryClient.setQueryData<CommentRow[]>(
         ["pm", "issue", issueId, "comments"],
         (previous) => {
-          const list = previous ?? [];
-          const stripped = list.filter((rowItem) => rowItem.id !== context?.tempId);
-          const withoutDup = stripped.filter((rowItem) => rowItem.id !== row.id);
-          return [...withoutDup, row];
-        },
-      );
+          const list = previous ?? []
+          const stripped = list.filter(
+            (rowItem) => rowItem.id !== context?.tempId
+          )
+          const withoutDup = stripped.filter((rowItem) => rowItem.id !== row.id)
+          return [...withoutDup, row]
+        }
+      )
     },
-  });
+  })
 
   const memberById = useMemo(() => {
-    const map = new Map<string, string>();
+    const map = new Map<string, string>()
     for (const member of membersQuery.data ?? []) {
-      map.set(member.user.id, member.user.name ?? member.user.email);
+      map.set(member.user.id, member.user.name ?? member.user.email)
     }
-    return map;
-  }, [membersQuery.data]);
+    return map
+  }, [membersQuery.data])
 
   if (!activeOrganizationId) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Select a workspace from the header first.
       </p>
-    );
+    )
   }
 
   if (detailQuery.isError) {
     return (
-      <p className="text-destructive text-sm" role="alert">
+      <p className="text-sm text-destructive" role="alert">
         {(detailQuery.error as Error).message}
       </p>
-    );
+    )
   }
 
   if (detailQuery.isPending || !issue) {
-    return <p className="text-muted-foreground text-sm">Loading issue…</p>;
+    return <p className="text-sm text-muted-foreground">Loading issue…</p>
   }
 
-  const statuses = statusesQuery.data ?? [];
+  const statuses = statusesQuery.data ?? []
   const statusLabel =
     statuses.find((row) => row.id === issue.statusId)?.name ??
     issue.statusName ??
-    "Status";
+    "Status"
 
-  const projects = projectsQuery.data ?? [];
+  const projects = projectsQuery.data ?? []
   const projectLabel =
     issue.projectId == null || issue.projectId.length === 0
       ? "No project"
       : (projects.find((row) => row.id === issue.projectId)?.name ??
         issue.projectName ??
-        "Project");
+        "Project")
 
-  const priorityLabel = formatPriorityLabel(issue.priority);
-  const hasStatusOption = statuses.some((row) => row.id === issue.statusId);
+  const priorityLabel = formatPriorityLabel(issue.priority)
+  const hasStatusOption = statuses.some((row) => row.id === issue.statusId)
   const hasProjectOption =
     issue.projectId == null ||
     issue.projectId.length === 0 ||
-    projects.some((row) => row.id === issue.projectId);
+    projects.some((row) => row.id === issue.projectId)
   const hasPriorityOption = PRIORITY_ORDER.includes(
-    issue.priority as (typeof PRIORITY_ORDER)[number],
-  );
+    issue.priority as (typeof PRIORITY_ORDER)[number]
+  )
 
   const handleToggleAssignee = (userId: string, checked: boolean) => {
-    const next = new Set(selectedAssignees);
+    const next = new Set(selectedAssignees)
     if (checked) {
-      next.add(userId);
+      next.add(userId)
     } else {
-      next.delete(userId);
+      next.delete(userId)
     }
-    const value = [...next];
-    setSelectedAssignees(value);
-    patchIssueMutation.mutate({ assigneeIds: value });
-  };
+    const value = [...next]
+    setSelectedAssignees(value)
+    patchIssueMutation.mutate({ assigneeIds: value })
+  }
 
   const handleToggleLabel = (labelId: string, checked: boolean) => {
-    const next = new Set(selectedLabels);
+    const next = new Set(selectedLabels)
     if (checked) {
-      next.add(labelId);
+      next.add(labelId)
     } else {
-      next.delete(labelId);
+      next.delete(labelId)
     }
-    const value = [...next];
-    setSelectedLabels(value);
-    patchIssueMutation.mutate({ labelIds: value });
-  };
+    const value = [...next]
+    setSelectedLabels(value)
+    patchIssueMutation.mutate({ labelIds: value })
+  }
 
   const handleAddComment = () => {
     if (isStoredRichTextContentEmpty(commentBody)) {
-      return;
+      return
     }
-    addCommentMutation.mutate(commentBody);
-  };
+    addCommentMutation.mutate(commentBody)
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
       <div className="flex flex-col gap-2">
         <Link
-          className="text-muted-foreground text-sm hover:underline"
+          className="text-sm text-muted-foreground hover:underline"
           href="/dashboard/issues"
         >
           ← Back to issues
@@ -460,7 +445,7 @@ export const IssueDetail = () => {
           issue={issue}
           key={issue.id}
           onPatch={(body) => {
-            patchIssueMutation.mutate(body);
+            patchIssueMutation.mutate(body)
           }}
           patchPending={patchIssueMutation.isPending}
         />
@@ -469,7 +454,7 @@ export const IssueDetail = () => {
           <FieldLabel>Status</FieldLabel>
           <Select
             onValueChange={(next) => {
-              patchIssueMutation.mutate({ statusId: next as string });
+              patchIssueMutation.mutate({ statusId: next as string })
             }}
             value={issue.statusId}
           >
@@ -495,7 +480,7 @@ export const IssueDetail = () => {
           <FieldLabel>Priority</FieldLabel>
           <Select
             onValueChange={(next) => {
-              patchIssueMutation.mutate({ priority: next as string });
+              patchIssueMutation.mutate({ priority: next as string })
             }}
             value={issue.priority}
           >
@@ -523,10 +508,10 @@ export const IssueDetail = () => {
           <FieldLabel>Project</FieldLabel>
           <Select
             onValueChange={(next) => {
-              const value = next as string;
+              const value = next as string
               patchIssueMutation.mutate({
                 projectId: value.length === 0 ? null : value,
-              });
+              })
             }}
             value={issue.projectId ?? ""}
           >
@@ -553,7 +538,7 @@ export const IssueDetail = () => {
           <Checkbox
             checked={Boolean(issue.archivedAt)}
             onCheckedChange={(checked) => {
-              patchIssueMutation.mutate({ archived: checked === true });
+              patchIssueMutation.mutate({ archived: checked === true })
             }}
           />
           Archived
@@ -574,7 +559,7 @@ export const IssueDetail = () => {
               <Checkbox
                 checked={selectedAssignees.includes(member.user.id)}
                 onCheckedChange={(checked) => {
-                  handleToggleAssignee(member.user.id, checked === true);
+                  handleToggleAssignee(member.user.id, checked === true)
                 }}
               />
               {member.user.name ?? member.user.email}
@@ -597,12 +582,12 @@ export const IssueDetail = () => {
               <Checkbox
                 checked={selectedLabels.includes(label.id)}
                 onCheckedChange={(checked) => {
-                  handleToggleLabel(label.id, checked === true);
+                  handleToggleLabel(label.id, checked === true)
                 }}
               />
               <span
                 aria-hidden
-                className="ring-background size-3 shrink-0 rounded-full border border-border shadow-xs/5 ring-2"
+                className="size-3 shrink-0 rounded-full border border-border shadow-xs/5 ring-2 ring-background"
                 style={{ backgroundColor: label.color }}
               />
               <span>{label.name}</span>
@@ -619,9 +604,9 @@ export const IssueDetail = () => {
         <ul className="flex flex-col gap-3">
           {(commentsQuery.data ?? []).map((comment) => (
             <li className="border-b pb-3 last:border-b-0" key={comment.id}>
-              <div className="text-muted-foreground mb-1 text-xs">
-                {memberById.get(comment.authorUserId) ?? comment.authorUserId}{' '}
-                · {new Date(comment.createdAt).toLocaleString()}
+              <div className="mb-1 text-xs text-muted-foreground">
+                {memberById.get(comment.authorUserId) ?? comment.authorUserId} ·{" "}
+                {new Date(comment.createdAt).toLocaleString()}
               </div>
               <RichTextDisplay
                 aria-label={`Comment ${comment.id}`}
@@ -632,7 +617,7 @@ export const IssueDetail = () => {
           ))}
           {!commentsQuery.isPending &&
           (commentsQuery.data ?? []).length === 0 ? (
-            <li className="text-muted-foreground text-sm">No comments yet.</li>
+            <li className="text-sm text-muted-foreground">No comments yet.</li>
           ) : null}
         </ul>
         <div className="mt-4 flex flex-col gap-2">
@@ -658,5 +643,5 @@ export const IssueDetail = () => {
         </div>
       </section>
     </div>
-  );
-};
+  )
+}

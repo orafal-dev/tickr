@@ -1,17 +1,17 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
+import Link from "next/link"
+import { redirect } from "next/navigation"
 
-import { SignOutButton } from "@/app/dashboard/sign-out-button";
-import { getSession } from "@/lib/auth";
+import { SignOutButton } from "@/app/dashboard/sign-out-button"
+import { getSession } from "@/lib/auth"
 
 export default async function OnboardingLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
-  const session = await getSession();
+  const session = await getSession()
   if (!session) {
-    redirect("/login");
+    redirect("/login")
   }
 
   return (
@@ -28,5 +28,5 @@ export default async function OnboardingLayout({
         {children}
       </main>
     </div>
-  );
+  )
 }

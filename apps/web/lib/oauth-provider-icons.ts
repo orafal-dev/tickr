@@ -1,4 +1,4 @@
-import type { IconSvgElement } from "@hugeicons/react";
+import type { IconSvgElement } from "@hugeicons/react"
 
 /** Multicolor Google “G” (brand colors); paths match Google’s sign-in asset proportions. */
 export const googleColoredOAuthIcon: IconSvgElement = [
@@ -34,7 +34,7 @@ export const googleColoredOAuthIcon: IconSvgElement = [
       key: "3",
     },
   ],
-];
+]
 
 /** Linear logomark is not in `@hugeicons/core-free-icons`; path from Simple Icons (CC0). */
 export const linearOAuthIcon: IconSvgElement = [
@@ -46,4 +46,4 @@ export const linearOAuthIcon: IconSvgElement = [
       key: "0",
     },
   ],
-];
+]

@@ -1,11 +1,11 @@
 const buildUrl = (path: string): string => {
-  const normalized = path.startsWith("/") ? path : `/${path}`;
-  return `/api/pm${normalized}`;
-};
+  const normalized = path.startsWith("/") ? path : `/${path}`
+  return `/api/pm${normalized}`
+}
 
 export const pmJson = async <T>(
   path: string,
-  init?: RequestInit,
+  init?: RequestInit
 ): Promise<T> => {
   const res = await fetch(buildUrl(path), {
     credentials: "include",
@@ -14,13 +14,13 @@ export const pmJson = async <T>(
       ...(init?.headers ?? {}),
     },
     ...init,
-  });
-  const text = await res.text();
+  })
+  const text = await res.text()
   if (!res.ok) {
-    throw new Error(text || res.statusText);
+    throw new Error(text || res.statusText)
   }
   if (!text) {
-    return undefined as T;
+    return undefined as T
   }
-  return JSON.parse(text) as T;
-};
+  return JSON.parse(text) as T
+}

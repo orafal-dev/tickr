@@ -1,6 +1,6 @@
-import { Suspense } from "react";
+import { Suspense } from "react"
 
-import { OAuthContinueView } from "@/app/auth/oauth-continue/oauth-continue-view";
+import { OAuthContinueView } from "@/app/auth/oauth-continue/oauth-continue-view"
 
 export default function OAuthContinuePage() {
   return (
@@ -8,7 +8,7 @@ export default function OAuthContinuePage() {
       <div className="w-full max-w-md rounded-lg border bg-card p-8 shadow-sm">
         <Suspense
           fallback={
-            <p className="text-muted-foreground text-center text-sm">
+            <p className="text-center text-sm text-muted-foreground">
               Loading…
             </p>
           }
@@ -17,5 +17,5 @@ export default function OAuthContinuePage() {
         </Suspense>
       </div>
     </div>
-  );
+  )
 }

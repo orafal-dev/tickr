@@ -1,5 +1,5 @@
-import type { z } from "zod";
+import type { z } from "zod"
 
-import { registerFormSchema } from "./register-form.schema";
+import { registerFormSchema } from "./register-form.schema"
 
-export type RegisterFormValues = z.infer<typeof registerFormSchema>;
+export type RegisterFormValues = z.infer<typeof registerFormSchema>

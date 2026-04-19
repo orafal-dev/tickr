@@ -3,21 +3,21 @@
  * that transitively import `server-only` (e.g. email modules). Runtime auth stays in
  * `better-auth-instance.ts`.
  */
-import { dash, sentinel } from "@better-auth/infra";
-import { betterAuth } from "better-auth";
-import { nextCookies } from "better-auth/next-js";
-import { organization } from "better-auth/plugins";
+import { dash, sentinel } from "@better-auth/infra"
+import { betterAuth } from "better-auth"
+import { nextCookies } from "better-auth/next-js"
+import { organization } from "better-auth/plugins"
 
 import {
   authDatabasePool,
   resolveAuthBaseURL,
   resolveAuthSecret,
   resolveBetterAuthInfraApiKey,
-} from "@/lib/better-auth-env";
-import { resolveSocialProvidersConfig } from "@/lib/oauth-providers";
+} from "@/lib/better-auth-env"
+import { resolveSocialProvidersConfig } from "@/lib/oauth-providers"
 
-const baseURL = resolveAuthBaseURL();
-const betterAuthInfraApiKey = resolveBetterAuthInfraApiKey();
+const baseURL = resolveAuthBaseURL()
+const betterAuthInfraApiKey = resolveBetterAuthInfraApiKey()
 
 export const auth = betterAuth({
   baseURL,
@@ -55,6 +55,6 @@ export const auth = betterAuth({
       async sendInvitationEmail() {},
     }),
   ],
-});
+})
 
-export type Session = typeof auth.$Infer.Session;
+export type Session = typeof auth.$Infer.Session

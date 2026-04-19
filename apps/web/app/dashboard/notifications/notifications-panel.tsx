@@ -1,71 +1,71 @@
-"use client";
+"use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import Link from "next/link"
 
-import { authClient } from "@/lib/auth-client";
-import { pmJson } from "@/lib/pm-browser";
-import type { PmNotification } from "@/lib/pm.types";
-import { Button } from "@workspace/ui/components/button";
-import { RichTextDisplay } from "@workspace/ui/components/rich-text-display";
+import { authClient } from "@/lib/auth-client"
+import { pmJson } from "@/lib/pm-browser"
+import type { PmNotification } from "@/lib/pm.types"
+import { Button } from "@workspace/ui/components/button"
+import { RichTextDisplay } from "@workspace/ui/components/rich-text-display"
 
 const isLikelyTipTapDocJson = (value: string): boolean => {
-  const trimmed = value.trim();
+  const trimmed = value.trim()
   if (!trimmed.startsWith("{")) {
-    return false;
+    return false
   }
   try {
-    const parsed: unknown = JSON.parse(trimmed);
+    const parsed: unknown = JSON.parse(trimmed)
     if (!parsed || typeof parsed !== "object") {
-      return false;
+      return false
     }
-    return (parsed as { type?: string }).type === "doc";
+    return (parsed as { type?: string }).type === "doc"
   } catch {
-    return false;
+    return false
   }
-};
+}
 
 export const NotificationsPanel = () => {
-  const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
-  const activeOrganizationId = session?.session.activeOrganizationId ?? "";
+  const queryClient = useQueryClient()
+  const { data: session } = authClient.useSession()
+  const activeOrganizationId = session?.session.activeOrganizationId ?? ""
 
   const notificationsQuery = useQuery({
     queryKey: ["pm", "notifications"],
     queryFn: () => pmJson<PmNotification[]>("/notifications"),
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const markReadMutation = useMutation({
     mutationFn: async (id: string) => {
       await pmJson<undefined>(`/notifications/${id}/read`, {
         method: "PATCH",
         body: JSON.stringify({}),
-      });
+      })
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["pm", "notifications"] });
+      await queryClient.invalidateQueries({ queryKey: ["pm", "notifications"] })
     },
-  });
+  })
 
   const markAllMutation = useMutation({
     mutationFn: async () => {
       await pmJson<undefined>("/notifications/read-all", {
         method: "POST",
         body: JSON.stringify({}),
-      });
+      })
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["pm", "notifications"] });
+      await queryClient.invalidateQueries({ queryKey: ["pm", "notifications"] })
     },
-  });
+  })
 
   if (!activeOrganizationId) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Select a workspace from the header first.
       </p>
-    );
+    )
   }
 
   return (
@@ -73,14 +73,14 @@ export const NotificationsPanel = () => {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-heading text-2xl font-medium">Notifications</h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             Assignment and comment activity for your user in this workspace.
           </p>
         </div>
         <Button
           disabled={markAllMutation.isPending}
           onClick={() => {
-            markAllMutation.mutate();
+            markAllMutation.mutate()
           }}
           type="button"
           variant="outline"
@@ -101,16 +101,16 @@ export const NotificationsPanel = () => {
                 isLikelyTipTapDocJson(notification.body) ? (
                   <RichTextDisplay
                     aria-label="Notification message"
-                    className="text-muted-foreground mt-1 line-clamp-3 overflow-hidden text-sm"
+                    className="mt-1 line-clamp-3 overflow-hidden text-sm text-muted-foreground"
                     value={notification.body}
                   />
                 ) : (
-                  <p className="text-muted-foreground mt-1 line-clamp-3 whitespace-pre-wrap">
+                  <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-muted-foreground">
                     {notification.body}
                   </p>
                 )
               ) : null}
-              <p className="text-muted-foreground mt-2 text-xs">
+              <p className="mt-2 text-xs text-muted-foreground">
                 {new Date(notification.createdAt).toLocaleString()}
                 {notification.readAt ? (
                   <span className="ms-2">· Read</span>
@@ -120,7 +120,7 @@ export const NotificationsPanel = () => {
               </p>
               {notification.issueId ? (
                 <Link
-                  className="text-primary mt-2 inline-block text-xs underline-offset-2 hover:underline"
+                  className="mt-2 inline-block text-xs text-primary underline-offset-2 hover:underline"
                   href={`/dashboard/issues/${notification.issueId}`}
                 >
                   Open issue
@@ -131,7 +131,7 @@ export const NotificationsPanel = () => {
               <Button
                 disabled={markReadMutation.isPending}
                 onClick={() => {
-                  markReadMutation.mutate(notification.id);
+                  markReadMutation.mutate(notification.id)
                 }}
                 size="sm"
                 type="button"
@@ -144,9 +144,11 @@ export const NotificationsPanel = () => {
         ))}
         {!notificationsQuery.isPending &&
         (notificationsQuery.data ?? []).length === 0 ? (
-          <li className="text-muted-foreground text-sm">You are all caught up.</li>
+          <li className="text-sm text-muted-foreground">
+            You are all caught up.
+          </li>
         ) : null}
       </ul>
     </div>
-  );
-};
+  )
+}

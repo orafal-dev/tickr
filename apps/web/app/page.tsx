@@ -1,11 +1,11 @@
-import Link from "next/link";
+import Link from "next/link"
 
-import { getSession } from "@/lib/auth";
-import { buttonVariants } from "@workspace/ui/components/button.variants";
-import { cn } from "@workspace/ui/lib/utils";
+import { getSession } from "@/lib/auth"
+import { buttonVariants } from "@workspace/ui/components/button.variants"
+import { cn } from "@workspace/ui/lib/utils"
 
 export default async function Page() {
-  const session = await getSession();
+  const session = await getSession()
 
   return (
     <div className="flex min-h-svh flex-col gap-6 p-6">
@@ -19,10 +19,7 @@ export default async function Page() {
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {session ? (
-              <Link
-                className={cn(buttonVariants())}
-                href="/dashboard"
-              >
+              <Link className={cn(buttonVariants())} href="/dashboard">
                 Open dashboard
               </Link>
             ) : (
@@ -40,10 +37,10 @@ export default async function Page() {
             )}
           </div>
         </div>
-        <p className="text-muted-foreground font-mono text-xs">
+        <p className="font-mono text-xs text-muted-foreground">
           Press <kbd>d</kbd> to toggle dark mode
         </p>
       </div>
     </div>
-  );
+  )
 }

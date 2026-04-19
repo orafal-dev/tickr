@@ -38,7 +38,7 @@ function ThemeHotkey() {
       ignoreInputs: true,
       preventDefault: false,
       stopPropagation: false,
-    },
+    }
   )
 
   return null

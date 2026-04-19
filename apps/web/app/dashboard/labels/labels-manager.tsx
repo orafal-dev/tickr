@@ -1,75 +1,72 @@
-"use client";
+"use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useState } from "react"
 
-import { authClient } from "@/lib/auth-client";
-import { pmJson } from "@/lib/pm-browser";
-import type { PmLabel } from "@/lib/pm.types";
-import { LabelColorPicker } from "@/components/label-color-picker";
-import { Button } from "@workspace/ui/components/button";
-import {
-  Field,
-  FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
+import { authClient } from "@/lib/auth-client"
+import { pmJson } from "@/lib/pm-browser"
+import type { PmLabel } from "@/lib/pm.types"
+import { LabelColorPicker } from "@/components/label-color-picker"
+import { Button } from "@workspace/ui/components/button"
+import { Field, FieldLabel } from "@workspace/ui/components/field"
+import { Input } from "@workspace/ui/components/input"
 
 export const LabelsManager = () => {
-  const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
-  const activeOrganizationId = session?.session.activeOrganizationId ?? "";
-  const [name, setName] = useState("");
-  const [color, setColor] = useState("#6366F1");
+  const queryClient = useQueryClient()
+  const { data: session } = authClient.useSession()
+  const activeOrganizationId = session?.session.activeOrganizationId ?? ""
+  const [name, setName] = useState("")
+  const [color, setColor] = useState("#6366F1")
 
   const labelsQuery = useQuery({
     queryKey: ["pm", "labels"],
     queryFn: () => pmJson<PmLabel[]>("/labels"),
     enabled: Boolean(activeOrganizationId),
-  });
+  })
 
   const createMutation = useMutation({
     mutationFn: async () => {
       return pmJson<PmLabel>("/labels", {
         method: "POST",
         body: JSON.stringify({ name: name.trim(), color }),
-      });
+      })
     },
     onSuccess: async () => {
-      setName("");
-      setColor("#6366F1");
-      await queryClient.invalidateQueries({ queryKey: ["pm", "labels"] });
+      setName("")
+      setColor("#6366F1")
+      await queryClient.invalidateQueries({ queryKey: ["pm", "labels"] })
     },
-  });
+  })
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await pmJson<undefined>(`/labels/${id}`, { method: "DELETE" });
+      await pmJson<undefined>(`/labels/${id}`, { method: "DELETE" })
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["pm", "labels"] });
+      await queryClient.invalidateQueries({ queryKey: ["pm", "labels"] })
     },
-  });
+  })
 
   if (!activeOrganizationId) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Select a workspace from the header first.
       </p>
-    );
+    )
   }
 
   const handleCreate = () => {
     if (!name.trim()) {
-      return;
+      return
     }
-    createMutation.mutate();
-  };
+    createMutation.mutate()
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
       <div>
         <h1 className="font-heading text-2xl font-medium">Labels</h1>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           Tag issues with colored labels.
         </p>
       </div>
@@ -83,7 +80,7 @@ export const LabelsManager = () => {
           <Input
             aria-label="Label name"
             onChange={(event) => {
-              setName(event.target.value);
+              setName(event.target.value)
             }}
             value={name}
           />
@@ -96,7 +93,7 @@ export const LabelsManager = () => {
               onChange={setColor}
               value={color}
             />
-            <span className="text-muted-foreground font-mono text-xs">
+            <span className="font-mono text-xs text-muted-foreground">
               {color}
             </span>
           </div>
@@ -121,18 +118,18 @@ export const LabelsManager = () => {
             <div className="flex items-center gap-3">
               <span
                 aria-hidden
-                className="ring-background inline-block size-3.5 shrink-0 rounded-full border border-border shadow-xs/5 ring-2"
+                className="inline-block size-3.5 shrink-0 rounded-full border border-border shadow-xs/5 ring-2 ring-background"
                 style={{ backgroundColor: label.color }}
               />
               <span className="font-medium">{label.name}</span>
-              <span className="text-muted-foreground font-mono text-xs">
+              <span className="font-mono text-xs text-muted-foreground">
                 {label.color}
               </span>
             </div>
             <Button
               disabled={deleteMutation.isPending}
               onClick={() => {
-                deleteMutation.mutate(label.id);
+                deleteMutation.mutate(label.id)
               }}
               size="sm"
               type="button"
@@ -143,9 +140,9 @@ export const LabelsManager = () => {
           </li>
         ))}
         {!labelsQuery.isPending && (labelsQuery.data ?? []).length === 0 ? (
-          <li className="text-muted-foreground text-sm">No labels yet.</li>
+          <li className="text-sm text-muted-foreground">No labels yet.</li>
         ) : null}
       </ul>
     </div>
-  );
-};
+  )
+}
