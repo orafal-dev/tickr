@@ -1,32 +1,32 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
+import Link from "next/link"
+import { redirect } from "next/navigation"
 
-import { DashboardOrganizationSwitcher } from "@/app/dashboard/dashboard-organization-switcher";
-import { DashboardQueryProvider } from "@/app/dashboard/dashboard-query-provider";
-import { SignOutButton } from "@/app/dashboard/sign-out-button";
-import { getSession } from "@/lib/auth";
-import { buttonVariants } from "@workspace/ui/components/button.variants";
-import { cn } from "@workspace/ui/lib/utils";
+import { DashboardOrganizationSwitcher } from "@/app/dashboard/dashboard-organization-switcher"
+import { DashboardQueryProvider } from "@/app/dashboard/dashboard-query-provider"
+import { SignOutButton } from "@/app/dashboard/sign-out-button"
+import { getSession } from "@/lib/auth"
+import { buttonVariants } from "@workspace/ui/components/button.variants"
+import { cn } from "@workspace/ui/lib/utils"
 
 export default async function DashboardLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
-  const session = await getSession();
+  const session = await getSession()
   if (!session) {
-    redirect("/login");
+    redirect("/login")
   }
 
   return (
     <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-background">
-      <header className="shrink-0 border-b bg-background/80 px-4 py-3 backdrop-blur sm:px-6">
+      <header className="shrink-0 border-b bg-background/80 px-4 py-3 backdrop-blur sm:px-8">
         <div className="flex w-full items-center justify-between gap-4">
           <div className="flex min-w-0 flex-col">
             <Link className="font-heading text-lg font-medium" href="/">
               Tickr
             </Link>
-            <span className="text-muted-foreground truncate text-xs">
+            <span className="truncate text-xs text-muted-foreground">
               Signed in as {session.user.email}
             </span>
           </div>
@@ -59,7 +59,7 @@ export default async function DashboardLayout({
                 <Link
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "sm" }),
-                    "h-8",
+                    "h-8"
                   )}
                   href="/dashboard"
                 >
@@ -68,7 +68,7 @@ export default async function DashboardLayout({
                 <Link
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "sm" }),
-                    "h-8",
+                    "h-8"
                   )}
                   href="/dashboard/issues"
                 >
@@ -77,7 +77,7 @@ export default async function DashboardLayout({
                 <Link
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "sm" }),
-                    "h-8",
+                    "h-8"
                   )}
                   href="/dashboard/projects"
                 >
@@ -86,7 +86,7 @@ export default async function DashboardLayout({
                 <Link
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "sm" }),
-                    "h-8",
+                    "h-8"
                   )}
                   href="/dashboard/labels"
                 >
@@ -95,7 +95,7 @@ export default async function DashboardLayout({
                 <Link
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "sm" }),
-                    "h-8",
+                    "h-8"
                   )}
                   href="/dashboard/notifications"
                 >
@@ -126,5 +126,5 @@ export default async function DashboardLayout({
         </DashboardQueryProvider>
       </div>
     </div>
-  );
+  )
 }
