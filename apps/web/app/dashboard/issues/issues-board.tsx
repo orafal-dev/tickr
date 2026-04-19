@@ -32,14 +32,14 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  Menu,
+  MenuGroup,
+  MenuGroupLabel,
+  MenuPopup,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuSeparator,
+  MenuTrigger,
 } from "@workspace/ui/components/menu"
 import {
   Popover,
@@ -544,8 +544,8 @@ export const IssuesBoard = () => {
             </PopoverPopup>
           </Popover>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger
+          <Menu>
+            <MenuTrigger
               aria-label="Display and layout"
               className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
               type="button"
@@ -555,18 +555,18 @@ export const IssuesBoard = () => {
                 className="size-4"
                 icon={LayoutTwoColumnIcon}
               />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-44">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>View</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup
+            </MenuTrigger>
+            <MenuPopup align="end" className="min-w-44">
+              <MenuGroup>
+                <MenuGroupLabel>View</MenuGroupLabel>
+                <MenuSeparator />
+                <MenuRadioGroup
                   onValueChange={(next) => {
                     setViewMode(next as IssuesViewMode)
                   }}
                   value={viewMode}
                 >
-                  <DropdownMenuRadioItem value="board">
+                  <MenuRadioItem value="board">
                     <span className="flex items-center gap-2">
                       <UiIcon
                         aria-hidden
@@ -575,8 +575,8 @@ export const IssuesBoard = () => {
                       />
                       Board
                     </span>
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="table">
+                  </MenuRadioItem>
+                  <MenuRadioItem value="table">
                     <span className="flex items-center gap-2">
                       <UiIcon
                         aria-hidden
@@ -585,11 +585,11 @@ export const IssuesBoard = () => {
                       />
                       Table
                     </span>
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  </MenuRadioItem>
+                </MenuRadioGroup>
+              </MenuGroup>
+            </MenuPopup>
+          </Menu>
 
           <Popover onOpenChange={setCreateIssueOpen} open={createIssueOpen}>
             <PopoverTrigger

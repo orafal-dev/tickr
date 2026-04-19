@@ -2,9 +2,9 @@
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
-import type * as React from "react"
-import { cn } from "@workspace/ui/lib/utils"
 import { UiIcon } from "@workspace/ui/components/ui-icon"
+import { cn } from "@workspace/ui/lib/utils"
+import type * as React from "react"
 
 export const MenuCreateHandle: typeof MenuPrimitive.createHandle =
   MenuPrimitive.createHandle
@@ -99,6 +99,26 @@ export function MenuItem({
       data-inset={inset}
       data-slot="menu-item"
       data-variant={variant}
+      {...props}
+    />
+  )
+}
+
+export function MenuLinkItem({
+  className,
+  inset,
+  ...props
+}: MenuPrimitive.LinkItem.Props & {
+  inset?: boolean
+}): React.ReactElement {
+  return (
+    <MenuPrimitive.LinkItem
+      className={cn(
+        "flex min-h-8 cursor-default items-center gap-2 rounded-sm px-2 py-1 text-base text-foreground no-underline outline-none select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-inset:ps-8 sm:min-h-7 sm:text-sm data-disabled:pointer-events-none data-disabled:opacity-64 [&>svg]:pointer-events-none [&>svg]:-mx-0.5 [&>svg]:shrink-0 [&>svg:not([class*='opacity-'])]:opacity-80 [&>svg:not([class*='size-'])]:size-4.5 sm:[&>svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      data-inset={inset}
+      data-slot="menu-link-item"
       {...props}
     />
   )
@@ -311,22 +331,4 @@ export function MenuSubPopup({
   )
 }
 
-export {
-  MenuPrimitive,
-  MenuCreateHandle as DropdownMenuCreateHandle,
-  Menu as DropdownMenu,
-  MenuPortal as DropdownMenuPortal,
-  MenuTrigger as DropdownMenuTrigger,
-  MenuPopup as DropdownMenuContent,
-  MenuGroup as DropdownMenuGroup,
-  MenuItem as DropdownMenuItem,
-  MenuCheckboxItem as DropdownMenuCheckboxItem,
-  MenuRadioGroup as DropdownMenuRadioGroup,
-  MenuRadioItem as DropdownMenuRadioItem,
-  MenuGroupLabel as DropdownMenuLabel,
-  MenuSeparator as DropdownMenuSeparator,
-  MenuShortcut as DropdownMenuShortcut,
-  MenuSub as DropdownMenuSub,
-  MenuSubTrigger as DropdownMenuSubTrigger,
-  MenuSubPopup as DropdownMenuSubContent,
-}
+export { MenuPrimitive }
