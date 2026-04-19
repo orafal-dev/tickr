@@ -9,6 +9,7 @@ import { NavUser } from "@/components/nav-user"
 import { OrgSwitcher } from "@/components/org-switcher"
 import {
   Activity01Icon,
+  Building02Icon,
   Folder01Icon,
   Home11Icon,
   LabelIcon,
@@ -50,6 +51,11 @@ const navMain: NavMainItem[] = [
     title: "Notifications",
     url: "/dashboard/notifications",
     icon: <UiIcon aria-hidden icon={Notification01Icon} />,
+  },
+  {
+    title: "Workspace",
+    url: "/dashboard/organization",
+    icon: <UiIcon aria-hidden icon={Building02Icon} />,
   },
   {
     title: "Profile",
