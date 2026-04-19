@@ -440,7 +440,7 @@ export const IssueDetail = () => {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
       <div className="flex flex-col gap-2">
         <Link
           className="text-muted-foreground text-sm hover:underline"

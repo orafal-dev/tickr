@@ -39,6 +39,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/menu";
+import {
+  Popover,
+  PopoverPopup,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover";
+import { UiIcon } from "@workspace/ui/components/ui-icon";
+import { buttonVariants } from "@workspace/ui/components/button.variants";
+import { cn } from "@workspace/ui/lib/utils";
+import {
+  FilterIcon,
+  LayoutTwoColumnIcon,
+  PlusSignIcon,
+  Search01Icon,
+  Table01Icon,
+} from "@hugeicons/core-free-icons";
 
 type IssuesViewMode = "table" | "board";
 
@@ -48,7 +73,8 @@ export const IssuesBoard = () => {
   const activeOrganizationId = session?.session.activeOrganizationId ?? "";
   const actorUserId = session?.user.id ?? "";
 
-  const [viewMode, setViewMode] = useState<IssuesViewMode>("table");
+  const [viewMode, setViewMode] = useState<IssuesViewMode>("board");
+  const [createIssueOpen, setCreateIssueOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [statusId, setStatusId] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -217,6 +243,7 @@ export const IssuesBoard = () => {
     },
     onSuccess: (row, _title, context) => {
       setNewTitle("");
+      setCreateIssueOpen(false);
       if (context?.tempId) {
         finalizeOptimisticIssueCreate(queryClient, context.tempId, row);
         return;
@@ -269,6 +296,15 @@ export const IssuesBoard = () => {
     Boolean(assigneeId) &&
     !members.some((row) => row.user.id === assigneeId);
 
+  const hasStructuredFilters =
+    Boolean(statusId) ||
+    Boolean(projectId) ||
+    Boolean(labelId) ||
+    Boolean(assigneeId) ||
+    includeArchived;
+
+  const hasSearchQuery = Boolean(searchText.trim());
+
   const handleCreateIssue = () => {
     const trimmed = newTitle.trim();
     if (!trimmed) {
@@ -278,247 +314,340 @@ export const IssuesBoard = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="font-heading text-2xl font-medium">Issues</h1>
           <p className="text-muted-foreground text-sm">
-            Linear-style tracking for your workspace. Keys use{" "}
+            Keys use{" "}
             <span className="font-mono text-xs">{slug}</span> and a number.
           </p>
         </div>
         <div
-          aria-label="Issues view"
-          className="bg-muted/40 flex w-fit shrink-0 gap-1 rounded-lg border p-1"
-          role="group"
+          aria-label="Issues toolbar"
+          className="flex shrink-0 items-center gap-0.5"
+          role="toolbar"
         >
-          <Button
-            aria-pressed={viewMode === "table"}
-            className="h-8 px-3"
-            onClick={() => {
-              setViewMode("table");
-            }}
-            type="button"
-            variant={viewMode === "table" ? "default" : "ghost"}
+          <Popover>
+            <PopoverTrigger
+              aria-label="Search issues"
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "icon" }),
+                "relative",
+              )}
+              type="button"
+            >
+              <UiIcon aria-hidden className="size-4" icon={Search01Icon} />
+              {hasSearchQuery ? (
+                <span
+                  aria-hidden
+                  className="bg-primary ring-background absolute inset-e-1 top-1 size-2 rounded-full ring-2"
+                />
+              ) : null}
+            </PopoverTrigger>
+            <PopoverPopup align="end" className="w-[min(22rem,calc(100vw-2rem))]">
+              <div className="flex flex-col gap-2">
+                <Field name="filter-search">
+                  <FieldLabel>Search</FieldLabel>
+                  <Input
+                    aria-label="Search issues"
+                    autoFocus
+                    onChange={(event) => {
+                      setSearchText(event.target.value);
+                    }}
+                    placeholder="Title or description"
+                    value={searchText}
+                  />
+                </Field>
+              </div>
+            </PopoverPopup>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger
+              aria-label="Filter issues"
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "icon" }),
+                "relative",
+              )}
+              type="button"
+            >
+              <UiIcon aria-hidden className="size-4" icon={FilterIcon} />
+              {hasStructuredFilters ? (
+                <span
+                  aria-hidden
+                  className="bg-primary ring-background absolute inset-e-1 top-1 size-2 rounded-full ring-2"
+                />
+              ) : null}
+            </PopoverTrigger>
+            <PopoverPopup
+              align="end"
+              className="w-[min(22rem,calc(100vw-2rem))]"
+            >
+              <div className="flex max-h-[min(70vh,32rem)] flex-col gap-3 overflow-y-auto pe-1">
+                <Field name="filter-status">
+                  <FieldLabel>Status</FieldLabel>
+                  <Select
+                    onValueChange={(next) => {
+                      setStatusId(next as string);
+                    }}
+                    value={statusId}
+                  >
+                    <SelectTrigger
+                      aria-label="Filter by status"
+                      className="w-full"
+                    >
+                      {statusId ? (
+                        <SelectValue>{statusFilterLabel}</SelectValue>
+                      ) : (
+                        <SelectValue placeholder="Any status" />
+                      )}
+                    </SelectTrigger>
+                    <SelectPopup>
+                      <SelectItem value="">Any status</SelectItem>
+                      {needsStatusFilterFallback ? (
+                        <SelectItem value={statusId}>
+                          {statusFilterLabel}
+                        </SelectItem>
+                      ) : null}
+                      {statuses.map((status) => (
+                        <SelectItem key={status.id} value={status.id}>
+                          {status.name}
+                        </SelectItem>
+                      ))}
+                    </SelectPopup>
+                  </Select>
+                </Field>
+                <Field name="filter-project">
+                  <FieldLabel>Project</FieldLabel>
+                  <Select
+                    onValueChange={(next) => {
+                      setProjectId(next as string);
+                    }}
+                    value={projectId}
+                  >
+                    <SelectTrigger
+                      aria-label="Filter by project"
+                      className="w-full"
+                    >
+                      {projectId ? (
+                        <SelectValue>{projectFilterLabel}</SelectValue>
+                      ) : (
+                        <SelectValue placeholder="Any project" />
+                      )}
+                    </SelectTrigger>
+                    <SelectPopup>
+                      <SelectItem value="">Any project</SelectItem>
+                      {needsProjectFilterFallback ? (
+                        <SelectItem value={projectId}>
+                          {projectFilterLabel}
+                        </SelectItem>
+                      ) : null}
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectPopup>
+                  </Select>
+                </Field>
+                <Field name="filter-label">
+                  <FieldLabel>Label</FieldLabel>
+                  <Select
+                    onValueChange={(next) => {
+                      setLabelId(next as string);
+                    }}
+                    value={labelId}
+                  >
+                    <SelectTrigger
+                      aria-label="Filter by label"
+                      className="w-full"
+                    >
+                      {labelId ? (
+                        <SelectValue>
+                          <span className="flex min-w-0 items-center gap-2">
+                            {labelRow ? (
+                              <span
+                                aria-hidden
+                                className="ring-background size-2.5 shrink-0 rounded-full border border-border ring-1"
+                                style={{ backgroundColor: labelRow.color }}
+                              />
+                            ) : null}
+                            <span className="truncate">{labelFilterLabel}</span>
+                          </span>
+                        </SelectValue>
+                      ) : (
+                        <SelectValue placeholder="Any label" />
+                      )}
+                    </SelectTrigger>
+                    <SelectPopup>
+                      <SelectItem value="">Any label</SelectItem>
+                      {needsLabelFilterFallback ? (
+                        <SelectItem value={labelId}>
+                          {labelFilterLabel}
+                        </SelectItem>
+                      ) : null}
+                      {labels.map((label) => (
+                        <SelectItem key={label.id} value={label.id}>
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span
+                              aria-hidden
+                              className="ring-background size-2.5 shrink-0 rounded-full border border-border ring-1"
+                              style={{ backgroundColor: label.color }}
+                            />
+                            <span className="truncate">{label.name}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectPopup>
+                  </Select>
+                </Field>
+                <Field name="filter-assignee">
+                  <FieldLabel>Assignee</FieldLabel>
+                  <Select
+                    onValueChange={(next) => {
+                      setAssigneeId(next as string);
+                    }}
+                    value={assigneeId}
+                  >
+                    <SelectTrigger
+                      aria-label="Filter by assignee"
+                      className="w-full"
+                    >
+                      {assigneeId ? (
+                        <SelectValue>
+                          {assigneeFilterLabel ?? "Unknown member"}
+                        </SelectValue>
+                      ) : (
+                        <SelectValue placeholder="Anyone" />
+                      )}
+                    </SelectTrigger>
+                    <SelectPopup>
+                      <SelectItem value="">Anyone</SelectItem>
+                      {needsAssigneeFilterFallback ? (
+                        <SelectItem value={assigneeId}>
+                          {assigneeFilterLabel ?? "Unknown member"}
+                        </SelectItem>
+                      ) : null}
+                      {members.map((member) => (
+                        <SelectItem key={member.user.id} value={member.user.id}>
+                          {member.user.name ?? member.user.email}
+                        </SelectItem>
+                      ))}
+                    </SelectPopup>
+                  </Select>
+                </Field>
+                <Label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={includeArchived}
+                    onCheckedChange={(checked) => {
+                      setIncludeArchived(checked === true);
+                    }}
+                  />
+                  Include archived
+                </Label>
+              </div>
+            </PopoverPopup>
+          </Popover>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label="Display and layout"
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
+              type="button"
+            >
+              <UiIcon aria-hidden className="size-4" icon={LayoutTwoColumnIcon} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-44">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>View</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  onValueChange={(next) => {
+                    setViewMode(next as IssuesViewMode);
+                  }}
+                  value={viewMode}
+                >
+                  <DropdownMenuRadioItem value="board">
+                    <span className="flex items-center gap-2">
+                      <UiIcon
+                        aria-hidden
+                        className="size-4 opacity-80"
+                        icon={LayoutTwoColumnIcon}
+                      />
+                      Board
+                    </span>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="table">
+                    <span className="flex items-center gap-2">
+                      <UiIcon
+                        aria-hidden
+                        className="size-4 opacity-80"
+                        icon={Table01Icon}
+                      />
+                      Table
+                    </span>
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Popover
+            onOpenChange={setCreateIssueOpen}
+            open={createIssueOpen}
           >
-            Table
-          </Button>
-          <Button
-            aria-pressed={viewMode === "board"}
-            className="h-8 px-3"
-            onClick={() => {
-              setViewMode("board");
-            }}
-            type="button"
-            variant={viewMode === "board" ? "default" : "ghost"}
-          >
-            Board
-          </Button>
+            <PopoverTrigger
+              aria-label="Create issue"
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
+              type="button"
+            >
+              <UiIcon aria-hidden className="size-4" icon={PlusSignIcon} />
+            </PopoverTrigger>
+            <PopoverPopup align="end" className="w-[min(22rem,calc(100vw-2rem))]">
+              <Field name="new-issue-title">
+                <FieldLabel>New issue</FieldLabel>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <Input
+                    aria-label="Issue title"
+                    className="sm:flex-1"
+                    onChange={(event) => {
+                      setNewTitle(event.target.value);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        handleCreateIssue();
+                      }
+                    }}
+                    placeholder="Title"
+                    value={newTitle}
+                  />
+                  <Button
+                    disabled={createIssueMutation.isPending || !newTitle.trim()}
+                    onClick={handleCreateIssue}
+                    type="button"
+                  >
+                    Create
+                  </Button>
+                </div>
+              </Field>
+            </PopoverPopup>
+          </Popover>
         </div>
       </div>
 
-      <section
-        aria-label="Create issue"
-        className="flex flex-col gap-3 rounded-lg border bg-card p-4 shadow-xs/5"
-      >
-        <Field name="new-issue-title">
-          <FieldLabel>New issue</FieldLabel>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <Input
-              aria-label="Issue title"
-              className="sm:flex-1"
-              onChange={(event) => {
-                setNewTitle(event.target.value);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  handleCreateIssue();
-                }
-              }}
-              placeholder="Title"
-              value={newTitle}
-            />
-            <Button
-              disabled={createIssueMutation.isPending || !newTitle.trim()}
-              onClick={handleCreateIssue}
-              type="button"
-            >
-              Create
-            </Button>
-          </div>
-        </Field>
-      </section>
-
-      <section
-        aria-label="Filters"
-        className="grid gap-3 rounded-lg border bg-card p-4 shadow-xs/5 sm:grid-cols-2 lg:grid-cols-3"
-      >
-        <Field name="filter-search">
-          <FieldLabel>Search</FieldLabel>
-          <Input
-            aria-label="Search issues"
-            onChange={(event) => {
-              setSearchText(event.target.value);
-            }}
-            placeholder="Title or description"
-            value={searchText}
-          />
-        </Field>
-        <Field name="filter-status">
-          <FieldLabel>Status</FieldLabel>
-          <Select
-            onValueChange={(next) => {
-              setStatusId(next as string);
-            }}
-            value={statusId}
-          >
-            <SelectTrigger aria-label="Filter by status" className="w-full">
-              {statusId ? (
-                <SelectValue>{statusFilterLabel}</SelectValue>
-              ) : (
-                <SelectValue placeholder="Any status" />
-              )}
-            </SelectTrigger>
-            <SelectPopup>
-              <SelectItem value="">Any status</SelectItem>
-              {needsStatusFilterFallback ? (
-                <SelectItem value={statusId}>{statusFilterLabel}</SelectItem>
-              ) : null}
-              {statuses.map((status) => (
-                <SelectItem key={status.id} value={status.id}>
-                  {status.name}
-                </SelectItem>
-              ))}
-            </SelectPopup>
-          </Select>
-        </Field>
-        <Field name="filter-project">
-          <FieldLabel>Project</FieldLabel>
-          <Select
-            onValueChange={(next) => {
-              setProjectId(next as string);
-            }}
-            value={projectId}
-          >
-            <SelectTrigger aria-label="Filter by project" className="w-full">
-              {projectId ? (
-                <SelectValue>{projectFilterLabel}</SelectValue>
-              ) : (
-                <SelectValue placeholder="Any project" />
-              )}
-            </SelectTrigger>
-            <SelectPopup>
-              <SelectItem value="">Any project</SelectItem>
-              {needsProjectFilterFallback ? (
-                <SelectItem value={projectId}>{projectFilterLabel}</SelectItem>
-              ) : null}
-              {projects.map((project) => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.name}
-                </SelectItem>
-              ))}
-            </SelectPopup>
-          </Select>
-        </Field>
-        <Field name="filter-label">
-          <FieldLabel>Label</FieldLabel>
-          <Select
-            onValueChange={(next) => {
-              setLabelId(next as string);
-            }}
-            value={labelId}
-          >
-            <SelectTrigger aria-label="Filter by label" className="w-full">
-              {labelId ? (
-                <SelectValue>
-                  <span className="flex min-w-0 items-center gap-2">
-                    {labelRow ? (
-                      <span
-                        aria-hidden
-                        className="ring-background size-2.5 shrink-0 rounded-full border border-border ring-1"
-                        style={{ backgroundColor: labelRow.color }}
-                      />
-                    ) : null}
-                    <span className="truncate">{labelFilterLabel}</span>
-                  </span>
-                </SelectValue>
-              ) : (
-                <SelectValue placeholder="Any label" />
-              )}
-            </SelectTrigger>
-            <SelectPopup>
-              <SelectItem value="">Any label</SelectItem>
-              {needsLabelFilterFallback ? (
-                <SelectItem value={labelId}>{labelFilterLabel}</SelectItem>
-              ) : null}
-              {labels.map((label) => (
-                <SelectItem key={label.id} value={label.id}>
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span
-                      aria-hidden
-                      className="ring-background size-2.5 shrink-0 rounded-full border border-border ring-1"
-                      style={{ backgroundColor: label.color }}
-                    />
-                    <span className="truncate">{label.name}</span>
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectPopup>
-          </Select>
-        </Field>
-        <Field name="filter-assignee">
-          <FieldLabel>Assignee</FieldLabel>
-          <Select
-            onValueChange={(next) => {
-              setAssigneeId(next as string);
-            }}
-            value={assigneeId}
-          >
-            <SelectTrigger aria-label="Filter by assignee" className="w-full">
-              {assigneeId ? (
-                <SelectValue>
-                  {assigneeFilterLabel ?? "Unknown member"}
-                </SelectValue>
-              ) : (
-                <SelectValue placeholder="Anyone" />
-              )}
-            </SelectTrigger>
-            <SelectPopup>
-              <SelectItem value="">Anyone</SelectItem>
-              {needsAssigneeFilterFallback ? (
-                <SelectItem value={assigneeId}>
-                  {assigneeFilterLabel ?? "Unknown member"}
-                </SelectItem>
-              ) : null}
-              {members.map((member) => (
-                <SelectItem key={member.user.id} value={member.user.id}>
-                  {member.user.name ?? member.user.email}
-                </SelectItem>
-              ))}
-            </SelectPopup>
-          </Select>
-        </Field>
-        <Label className="flex cursor-pointer items-center gap-2 text-sm">
-          <Checkbox
-            checked={includeArchived}
-            onCheckedChange={(checked) => {
-              setIncludeArchived(checked === true);
-            }}
-          />
-          Include archived
-        </Label>
-      </section>
-
       {issuesQuery.isError ? (
-        <p className="text-destructive text-sm" role="alert">
+        <p className="text-destructive shrink-0 text-sm" role="alert">
           {(issuesQuery.error as Error).message}
         </p>
       ) : null}
 
       {viewMode === "board" ? (
         issuesQuery.isPending ? (
-          <p className="text-muted-foreground text-sm">Loading issues…</p>
+          <p className="text-muted-foreground shrink-0 text-sm">
+            Loading issues…
+          </p>
         ) : (
           <IssuesKanban
             issues={issuesQuery.data ?? []}
@@ -527,7 +656,7 @@ export const IssuesBoard = () => {
           />
         )
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="min-h-0 flex-1 overflow-auto rounded-lg border">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
               <tr>

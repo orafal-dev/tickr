@@ -232,7 +232,7 @@ const KanbanColumn = ({
 
   return (
     <div
-      className={`bg-card flex w-[min(100%,18rem)] shrink-0 flex-col rounded-lg border shadow-xs/5 ${
+      className={`bg-card flex h-full min-h-0 w-[min(100%,18rem)] shrink-0 flex-col rounded-lg border shadow-xs/5 ${
         columnDragging ? "opacity-70" : ""
       }`}
       ref={columnRef}
@@ -269,7 +269,7 @@ const KanbanColumn = ({
         </span>
       </div>
       <div
-        className={`flex min-h-48 flex-1 flex-col gap-2 overflow-y-auto p-2 ${
+        className={`flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2 ${
           isDropTarget ? "bg-primary/5 ring-primary/40 ring-1 ring-inset" : ""
         }`}
         ref={issueDropRef}
@@ -487,14 +487,14 @@ export const IssuesKanban = ({
         ...defaults.filter((sensor) => sensor !== PointerSensor),
       ]}
     >
-      <div className="flex flex-col gap-3">
-        <p className="text-muted-foreground text-xs">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <p className="sr-only">
           Drag column headers to reorder statuses. Drag issues by the handle, or
           Shift-click cards to select several, then drop the selection into another
           column. The board loads up to 200 issues with your current filters.
         </p>
-        <div className="max-h-[min(70vh,52rem)] overflow-x-auto overflow-y-hidden pb-1">
-          <div className="flex h-full min-h-[min(70vh,52rem)] flex-row gap-3 pe-1">
+        <div className="flex min-h-0 flex-1 overflow-x-auto overflow-y-hidden pb-1">
+          <div className="flex h-full min-h-0 flex-row items-stretch gap-3 pe-1">
             {orderedStatuses.map((status, index) => (
               <KanbanColumn
                 index={index}

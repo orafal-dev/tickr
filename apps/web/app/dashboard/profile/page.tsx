@@ -14,7 +14,7 @@ export default async function ProfilePage() {
   const emailVerified = Boolean(session.user.emailVerified);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
       <div className="flex flex-col gap-1">
         <h1 className="font-heading text-2xl font-medium">Profile</h1>
         <p className="text-muted-foreground text-sm leading-relaxed">
