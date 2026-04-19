@@ -12,6 +12,8 @@ import {
   FieldLabel,
 } from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
+import { RichTextEditor } from "@workspace/ui/components/rich-text-editor";
+import { isStoredRichTextContentEmpty } from "@workspace/ui/lib/rich-text-tiptap";
 
 export const ProjectsManager = () => {
   const queryClient = useQueryClient();
@@ -32,7 +34,9 @@ export const ProjectsManager = () => {
         method: "POST",
         body: JSON.stringify({
           name: name.trim(),
-          description: description.trim() || undefined,
+          description: isStoredRichTextContentEmpty(description)
+            ? undefined
+            : description,
         }),
       });
     },
@@ -98,12 +102,10 @@ export const ProjectsManager = () => {
         </Field>
         <Field name="project-description">
           <FieldLabel>Description</FieldLabel>
-          <textarea
+          <RichTextEditor
             aria-label="Project description"
-            className="border-input bg-background focus-visible:ring-ring min-h-24 w-full rounded-md border px-3 py-2 text-sm outline-none focus-visible:ring-2"
-            onChange={(event) => {
-              setDescription(event.target.value);
-            }}
+            disabled={createMutation.isPending}
+            onChange={setDescription}
             value={description}
           />
         </Field>

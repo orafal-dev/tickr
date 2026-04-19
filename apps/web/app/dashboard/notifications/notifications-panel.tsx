@@ -7,6 +7,23 @@ import { authClient } from "@/lib/auth-client";
 import { pmJson } from "@/lib/pm-browser";
 import type { PmNotification } from "@/lib/pm.types";
 import { Button } from "@workspace/ui/components/button";
+import { RichTextDisplay } from "@workspace/ui/components/rich-text-display";
+
+const isLikelyTipTapDocJson = (value: string): boolean => {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("{")) {
+    return false;
+  }
+  try {
+    const parsed: unknown = JSON.parse(trimmed);
+    if (!parsed || typeof parsed !== "object") {
+      return false;
+    }
+    return (parsed as { type?: string }).type === "doc";
+  } catch {
+    return false;
+  }
+};
 
 export const NotificationsPanel = () => {
   const queryClient = useQueryClient();
@@ -81,9 +98,17 @@ export const NotificationsPanel = () => {
             <div className="min-w-0 flex-1">
               <p className="font-medium">{notification.title}</p>
               {notification.body ? (
-                <p className="text-muted-foreground mt-1 line-clamp-3 whitespace-pre-wrap">
-                  {notification.body}
-                </p>
+                isLikelyTipTapDocJson(notification.body) ? (
+                  <RichTextDisplay
+                    aria-label="Notification message"
+                    className="text-muted-foreground mt-1 line-clamp-3 overflow-hidden text-sm"
+                    value={notification.body}
+                  />
+                ) : (
+                  <p className="text-muted-foreground mt-1 line-clamp-3 whitespace-pre-wrap">
+                    {notification.body}
+                  </p>
+                )
               ) : null}
               <p className="text-muted-foreground mt-2 text-xs">
                 {new Date(notification.createdAt).toLocaleString()}

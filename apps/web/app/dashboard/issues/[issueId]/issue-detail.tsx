@@ -6,6 +6,14 @@ import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import {
+  applyRecordToIssueListRow,
+  patchIssueAcrossPmIssuesLists,
+  PM_ISSUES_LIST_QUERY_PREFIX,
+  replaceIssueRowAcrossPmIssuesLists,
+  restorePmIssuesListsSnapshot,
+  snapshotPmIssuesLists,
+} from "@/lib/pm-issues-cache";
 import { pmJson } from "@/lib/pm-browser";
 import type {
   IssueDetailResponse,
@@ -22,6 +30,7 @@ import {
 } from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
+import { RichTextDisplay } from "@workspace/ui/components/rich-text-display";
 import { RichTextEditor } from "@workspace/ui/components/rich-text-editor";
 import {
   Select,
@@ -30,7 +39,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { Textarea } from "@workspace/ui/components/textarea";
+import {
+  isStoredRichTextContentEmpty,
+  stringifyStoredRichTextInput,
+} from "@workspace/ui/lib/rich-text-tiptap";
 
 type CommentRow = Readonly<{
   id: string;
@@ -63,12 +75,82 @@ const formatPriorityLabel = (priority: string) => {
     .join(" ");
 };
 
+/**
+ * Mounted only when `issue` exists, with `key={issue.id}` so title/description
+ * state is initialized from server JSON — avoids RichTextEditor mounting with
+ * empty `value` before a parent `useEffect` could hydrate state.
+ */
+const IssueTitleDescriptionBlock = ({
+  issue,
+  patchPending,
+  onPatch,
+}: Readonly<{
+  issue: IssueListRow;
+  patchPending: boolean;
+  onPatch: (body: Record<string, unknown>) => void;
+}>) => {
+  const [title, setTitle] = useState(issue.title);
+  const [description, setDescription] = useState(() =>
+    stringifyStoredRichTextInput(issue.description),
+  );
+
+  useEffect(() => {
+    setTitle(issue.title);
+    setDescription(stringifyStoredRichTextInput(issue.description));
+  }, [issue.description, issue.id, issue.title]);
+
+  const handleSaveCore = () => {
+    const descriptionPayload =
+      typeof description === "string"
+        ? description
+        : stringifyStoredRichTextInput(description);
+    onPatch({
+      title: title.trim(),
+      description: descriptionPayload,
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-3 lg:col-span-2">
+      <Field name="title">
+        <FieldLabel>Title</FieldLabel>
+        <Input
+          aria-label="Issue title"
+          onChange={(event) => {
+            setTitle(event.target.value);
+          }}
+          value={title}
+        />
+      </Field>
+      <Field name="description">
+        <FieldLabel>Description</FieldLabel>
+        <RichTextEditor
+          aria-label="Issue description"
+          disabled={patchPending}
+          onChange={setDescription}
+          value={description}
+        />
+      </Field>
+      <div>
+        <Button
+          disabled={patchPending}
+          onClick={handleSaveCore}
+          type="button"
+        >
+          Save title & description
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export const IssueDetail = () => {
   const params = useParams();
   const issueId = String(params.issueId ?? "");
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
   const activeOrganizationId = session?.session.activeOrganizationId ?? "";
+  const actorUserId = session?.user.id ?? "";
 
   const workspaceQuery = useQuery({
     queryKey: ["pm", "workspace"],
@@ -122,19 +204,9 @@ export const IssueDetail = () => {
 
   const issue = detailQuery.data?.issue;
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [commentBody, setCommentBody] = useState("");
-
-  useEffect(() => {
-    if (!issue) {
-      return;
-    }
-    setTitle(issue.title);
-    setDescription(issue.description ?? "");
-  }, [issue?.description, issue?.id, issue?.title]);
 
   useEffect(() => {
     if (!detailQuery.data) {
@@ -158,24 +230,129 @@ export const IssueDetail = () => {
         body: JSON.stringify(body),
       });
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["pm", "issue", issueId] });
-      await queryClient.invalidateQueries({ queryKey: ["pm", "issues"] });
+    onMutate: async (body) => {
+      await queryClient.cancelQueries({ queryKey: ["pm", "issue", issueId] });
+      await queryClient.cancelQueries({
+        queryKey: [...PM_ISSUES_LIST_QUERY_PREFIX],
+      });
+      const prevDetail = queryClient.getQueryData<IssueDetailResponse>([
+        "pm",
+        "issue",
+        issueId,
+      ]);
+      const prevLists = snapshotPmIssuesLists(queryClient);
+      const statuses = statusesQuery.data ?? [];
+      const projects = projectsQuery.data ?? [];
+      const labels = labelsQuery.data ?? [];
+      if (prevDetail) {
+        const nextIssue = applyRecordToIssueListRow(prevDetail.issue, body, {
+          statuses,
+          projects,
+        });
+        let nextLabels = prevDetail.labels;
+        if (Array.isArray(body.labelIds)) {
+          const labelSet = new Set(body.labelIds.map((id) => String(id)));
+          nextLabels = labels.filter((label) => labelSet.has(label.id));
+        }
+        let nextAssignees = prevDetail.assignees;
+        if (Array.isArray(body.assigneeIds)) {
+          nextAssignees = body.assigneeIds.map((userId) => ({
+            userId: String(userId),
+          }));
+        }
+        queryClient.setQueryData<IssueDetailResponse>(
+          ["pm", "issue", issueId],
+          {
+            ...prevDetail,
+            issue: nextIssue,
+            labels: nextLabels,
+            assignees: nextAssignees,
+          },
+        );
+      }
+      patchIssueAcrossPmIssuesLists(
+        queryClient,
+        issueId,
+        body,
+        { statuses, projects },
+        prevDetail?.issue ?? null,
+      );
+      return { prevDetail, prevLists };
+    },
+    onError: (_error, _body, context) => {
+      if (context?.prevDetail !== undefined) {
+        queryClient.setQueryData(["pm", "issue", issueId], context.prevDetail);
+      }
+      if (context?.prevLists) {
+        restorePmIssuesListsSnapshot(queryClient, context.prevLists);
+      }
+    },
+    onSuccess: (updatedRow) => {
+      queryClient.setQueryData(
+        ["pm", "issue", issueId],
+        (previous: IssueDetailResponse | undefined) => {
+          if (!previous) {
+            return previous;
+          }
+          return {
+            ...previous,
+            issue: { ...previous.issue, ...updatedRow },
+          };
+        },
+      );
+      replaceIssueRowAcrossPmIssuesLists(queryClient, issueId, updatedRow);
     },
   });
 
   const addCommentMutation = useMutation({
-    mutationFn: async (body: string) => {
+    mutationFn: async (bodyJson: string) => {
       return pmJson<CommentRow>(`/issues/${issueId}/comments`, {
         method: "POST",
-        body: JSON.stringify({ body }),
+        body: JSON.stringify({ body: bodyJson }),
       });
     },
-    onSuccess: async () => {
-      setCommentBody("");
-      await queryClient.invalidateQueries({
+    onMutate: async (bodyJson) => {
+      await queryClient.cancelQueries({
         queryKey: ["pm", "issue", issueId, "comments"],
       });
+      const prevComments =
+        queryClient.getQueryData<CommentRow[]>([
+          "pm",
+          "issue",
+          issueId,
+          "comments",
+        ]) ?? [];
+      const tempId = `optimistic-comment:${crypto.randomUUID()}`;
+      const now = new Date().toISOString();
+      const optimistic: CommentRow = {
+        id: tempId,
+        body: bodyJson,
+        authorUserId: actorUserId,
+        createdAt: now,
+      };
+      queryClient.setQueryData<CommentRow[]>(
+        ["pm", "issue", issueId, "comments"],
+        [...prevComments, optimistic],
+      );
+      return { prevComments, tempId };
+    },
+    onError: (_error, _body, context) => {
+      queryClient.setQueryData(
+        ["pm", "issue", issueId, "comments"],
+        context?.prevComments ?? [],
+      );
+    },
+    onSuccess: (row, _body, context) => {
+      setCommentBody("");
+      queryClient.setQueryData<CommentRow[]>(
+        ["pm", "issue", issueId, "comments"],
+        (previous) => {
+          const list = previous ?? [];
+          const stripped = list.filter((rowItem) => rowItem.id !== context?.tempId);
+          const withoutDup = stripped.filter((rowItem) => rowItem.id !== row.id);
+          return [...withoutDup, row];
+        },
+      );
     },
   });
 
@@ -231,13 +408,6 @@ export const IssueDetail = () => {
     issue.priority as (typeof PRIORITY_ORDER)[number],
   );
 
-  const handleSaveCore = () => {
-    patchIssueMutation.mutate({
-      title: title.trim(),
-      description,
-    });
-  };
-
   const handleToggleAssignee = (userId: string, checked: boolean) => {
     const next = new Set(selectedAssignees);
     if (checked) {
@@ -263,11 +433,10 @@ export const IssueDetail = () => {
   };
 
   const handleAddComment = () => {
-    const trimmed = commentBody.trim();
-    if (!trimmed) {
+    if (isStoredRichTextContentEmpty(commentBody)) {
       return;
     }
-    addCommentMutation.mutate(trimmed);
+    addCommentMutation.mutate(commentBody);
   };
 
   return (
@@ -287,36 +456,14 @@ export const IssueDetail = () => {
         aria-label="Issue fields"
         className="grid gap-4 rounded-lg border bg-card p-4 shadow-xs/5 lg:grid-cols-2"
       >
-        <div className="flex flex-col gap-3 lg:col-span-2">
-          <Field name="title">
-            <FieldLabel>Title</FieldLabel>
-            <Input
-              aria-label="Issue title"
-              onChange={(event) => {
-                setTitle(event.target.value);
-              }}
-              value={title}
-            />
-          </Field>
-          <Field name="description">
-            <FieldLabel>Description</FieldLabel>
-            <RichTextEditor
-              aria-label="Issue description"
-              disabled={patchIssueMutation.isPending}
-              onChange={setDescription}
-              value={description}
-            />
-          </Field>
-          <div>
-            <Button
-              disabled={patchIssueMutation.isPending}
-              onClick={handleSaveCore}
-              type="button"
-            >
-              Save title & description
-            </Button>
-          </div>
-        </div>
+        <IssueTitleDescriptionBlock
+          issue={issue}
+          key={issue.id}
+          onPatch={(body) => {
+            patchIssueMutation.mutate(body);
+          }}
+          patchPending={patchIssueMutation.isPending}
+        />
 
         <Field name="status">
           <FieldLabel>Status</FieldLabel>
@@ -476,7 +623,11 @@ export const IssueDetail = () => {
                 {memberById.get(comment.authorUserId) ?? comment.authorUserId}{' '}
                 · {new Date(comment.createdAt).toLocaleString()}
               </div>
-              <p className="whitespace-pre-wrap text-sm">{comment.body}</p>
+              <RichTextDisplay
+                aria-label={`Comment ${comment.id}`}
+                className="text-sm"
+                value={stringifyStoredRichTextInput(comment.body)}
+              />
             </li>
           ))}
           {!commentsQuery.isPending &&
@@ -487,17 +638,18 @@ export const IssueDetail = () => {
         <div className="mt-4 flex flex-col gap-2">
           <Field name="comment">
             <FieldLabel>Add comment</FieldLabel>
-            <Textarea
+            <RichTextEditor
               aria-label="New comment"
-              className="[&_[data-slot=textarea]]:min-h-24"
-              onChange={(event) => {
-                setCommentBody(event.target.value);
-              }}
+              disabled={addCommentMutation.isPending}
+              onChange={setCommentBody}
               value={commentBody}
             />
           </Field>
           <Button
-            disabled={addCommentMutation.isPending || !commentBody.trim()}
+            disabled={
+              addCommentMutation.isPending ||
+              isStoredRichTextContentEmpty(commentBody)
+            }
             onClick={handleAddComment}
             type="button"
           >

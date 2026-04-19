@@ -6,6 +6,7 @@ import type {
   createLabelBodySchema,
   createProjectBodySchema,
   listIssuesQuerySchema,
+  reorderStatusesBodySchema,
   updateIssueBodySchema,
   updateLabelBodySchema,
   updateProjectBodySchema,
@@ -19,3 +20,4 @@ export type UpdateProjectBody = z.infer<typeof updateProjectBodySchema>;
 export type CreateIssueBody = z.infer<typeof createIssueBodySchema>;
 export type UpdateIssueBody = z.infer<typeof updateIssueBodySchema>;
 export type CreateCommentBody = z.infer<typeof createCommentBodySchema>;
+export type ReorderStatusesBody = z.infer<typeof reorderStatusesBodySchema>;

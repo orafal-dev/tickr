@@ -14,6 +14,7 @@ import type {
   CreateLabelBody,
   CreateProjectBody,
   ListIssuesQuery,
+  ReorderStatusesBody,
   UpdateIssueBody,
   UpdateLabelBody,
   UpdateProjectBody,
@@ -35,6 +36,34 @@ export class PmService {
     @Inject(DATABASE_POOL) private readonly pool: Pool,
     private readonly organizationAccess: OrganizationAccessService,
   ) {}
+
+  /**
+   * Issue descriptions are stored as TEXT (TipTap JSON string). Some drivers or
+   * column types may surface values as objects; clients always expect a string.
+   */
+  private normalizeIssueDescription(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return '';
+      }
+    }
+    return String(value);
+  }
+
+  private mapIssueRow(row: Record<string, unknown>): unknown {
+    return {
+      ...row,
+      description: this.normalizeIssueDescription(row.description),
+    };
+  }
 
   async getWorkspaceMeta(organizationId: string): Promise<{
     readonly organizationSlug: string | null;
@@ -81,6 +110,49 @@ export class PmService {
       [organizationId],
     );
     return res.rows;
+  }
+
+  async reorderStatuses(
+    organizationId: string,
+    body: ReorderStatusesBody,
+  ): Promise<unknown[]> {
+    await this.ensureDefaultStatuses(organizationId);
+    const orderedIds = body.orderedIds;
+    const res = await this.pool.query<{ id: string }>(
+      `select id from pm_issue_status
+       where organization_id = $1`,
+      [organizationId],
+    );
+    const existing = new Set(res.rows.map((row) => row.id));
+    if (orderedIds.length !== existing.size) {
+      throw new BadRequestException(
+        'orderedIds must list every status exactly once.',
+      );
+    }
+    for (const id of orderedIds) {
+      if (!existing.has(id)) {
+        throw new BadRequestException('Unknown status id in orderedIds.');
+      }
+    }
+    const client = await this.pool.connect();
+    try {
+      await client.query('begin');
+      for (let i = 0; i < orderedIds.length; i += 1) {
+        await client.query(
+          `update pm_issue_status
+           set position = $3
+           where organization_id = $1 and id = $2`,
+          [organizationId, orderedIds[i], i],
+        );
+      }
+      await client.query('commit');
+    } catch (error) {
+      await client.query('rollback');
+      throw error;
+    } finally {
+      client.release();
+    }
+    return this.listStatuses(organizationId);
   }
 
   async listLabels(organizationId: string): Promise<unknown[]> {
@@ -263,7 +335,9 @@ export class PmService {
                  order by i.updated_at desc
                  limit $${limitParam} offset $${offsetParam}`;
     const res = await this.pool.query(sql, params);
-    return res.rows;
+    return res.rows.map((row) =>
+      this.mapIssueRow(row as Record<string, unknown>),
+    );
   }
 
   private async resolveDefaultStatusId(
@@ -440,7 +514,7 @@ export class PmService {
         body: null,
       });
       await client.query('commit');
-      return issueRes.rows[0];
+      return this.mapIssueRow(issueRes.rows[0] as Record<string, unknown>);
     } catch (error) {
       await client.query('rollback');
       throw error;
@@ -488,7 +562,7 @@ export class PmService {
       [issueId],
     );
     return {
-      issue: issueRes.rows[0],
+      issue: this.mapIssueRow(issueRes.rows[0] as Record<string, unknown>),
       labels: labelsRes.rows,
       assignees: assigneesRes.rows,
     };

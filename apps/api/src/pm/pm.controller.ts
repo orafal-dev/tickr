@@ -20,6 +20,7 @@ import {
   createLabelBodySchema,
   createProjectBodySchema,
   listIssuesQuerySchema,
+  reorderStatusesBodySchema,
   updateIssueBodySchema,
   updateLabelBodySchema,
   updateProjectBodySchema,
@@ -50,6 +51,17 @@ export class PmController {
   @Get('statuses')
   listStatuses(@PmCtx() ctx: PmContext): Promise<unknown[]> {
     return this.pmService.listStatuses(ctx.organizationId);
+  }
+
+  @Patch('statuses/reorder')
+  reorderStatuses(
+    @PmCtx() ctx: PmContext,
+    @Body() body: unknown,
+  ): Promise<unknown[]> {
+    return this.pmService.reorderStatuses(
+      ctx.organizationId,
+      parseOrThrow(reorderStatusesBodySchema, body),
+    );
   }
 
   @Get('labels')

@@ -1,5 +1,74 @@
 import { z } from 'zod';
 
+const stringifyRichTextInput = (val: unknown): string | undefined => {
+  if (val === undefined || val === null) {
+    return undefined;
+  }
+  if (typeof val === 'string') {
+    return val;
+  }
+  if (typeof val === 'object') {
+    return JSON.stringify(val);
+  }
+  return String(val);
+};
+
+/** True when stored TipTap JSON has visible text, or when value is legacy plain/HTML. */
+const storedRichTextHasVisibleContent = (value: string): boolean => {
+  const s = value.trim();
+  if (!s) {
+    return false;
+  }
+  if (!s.startsWith('{')) {
+    return true;
+  }
+  try {
+    const doc = JSON.parse(s) as {
+      type?: string;
+      content?: unknown[];
+    };
+    if (doc.type !== 'doc' || !Array.isArray(doc.content)) {
+      return true;
+    }
+    const visit = (nodes: unknown[]): boolean => {
+      for (const node of nodes) {
+        if (!node || typeof node !== 'object') {
+          continue;
+        }
+        const rec = node as {
+          type?: string;
+          text?: string;
+          content?: unknown[];
+        };
+        if (
+          rec.type === 'text' &&
+          typeof rec.text === 'string' &&
+          rec.text.trim() !== ''
+        ) {
+          return true;
+        }
+        if (Array.isArray(rec.content) && visit(rec.content)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    return visit(doc.content);
+  } catch {
+    return true;
+  }
+};
+
+/** TipTap JSON is stored as TEXT; accept either a JSON string or a parsed doc object. */
+const issueDescriptionInputSchema = z.preprocess((val) => {
+  return stringifyRichTextInput(val);
+}, z.string().max(100_000).optional());
+
+const commentBodyStringSchema = z.preprocess(
+  (val) => stringifyRichTextInput(val),
+  z.string().max(100_000),
+);
+
 export const prioritySchema = z.enum([
   'urgent',
   'high',
@@ -23,7 +92,7 @@ export const listIssuesQuerySchema = z
     labelId: z.string().uuid().optional(),
     assigneeId: z.string().min(1).optional(),
     includeArchived: z.enum(['true', 'false']).optional(),
-    limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+    limit: z.coerce.number().int().min(1).max(200).optional().default(50),
     offset: z.coerce.number().int().min(0).optional().default(0),
   })
   .transform((value) => ({
@@ -47,14 +116,14 @@ export const updateLabelBodySchema = z
 
 export const createProjectBodySchema = z.object({
   name: z.string().trim().min(1).max(200),
-  description: z.string().max(8000).optional(),
+  description: issueDescriptionInputSchema,
   status: projectLifecycleSchema.optional(),
 });
 
 export const updateProjectBodySchema = z
   .object({
     name: z.string().trim().min(1).max(200).optional(),
-    description: z.string().max(8000).optional(),
+    description: issueDescriptionInputSchema,
     status: projectLifecycleSchema.optional(),
   })
   .refine(
@@ -67,7 +136,7 @@ export const updateProjectBodySchema = z
 
 export const createIssueBodySchema = z.object({
   title: z.string().trim().min(1).max(500),
-  description: z.string().max(100_000).optional(),
+  description: issueDescriptionInputSchema,
   statusId: z.string().uuid().optional(),
   projectId: z.string().uuid().nullable().optional(),
   priority: prioritySchema.optional(),
@@ -78,7 +147,7 @@ export const createIssueBodySchema = z.object({
 export const updateIssueBodySchema = z
   .object({
     title: z.string().trim().min(1).max(500).optional(),
-    description: z.string().max(100_000).optional(),
+    description: issueDescriptionInputSchema,
     statusId: z.string().uuid().optional(),
     projectId: z.string().uuid().nullable().optional(),
     priority: prioritySchema.optional(),
@@ -99,6 +168,15 @@ export const updateIssueBodySchema = z
     { message: 'Provide at least one field to update.' },
   );
 
-export const createCommentBodySchema = z.object({
-  body: z.string().trim().min(1).max(20000),
+export const createCommentBodySchema = z
+  .object({
+    body: commentBodyStringSchema,
+  })
+  .refine((value) => storedRichTextHasVisibleContent(value.body), {
+    message: 'Comment body cannot be empty.',
+    path: ['body'],
+  });
+
+export const reorderStatusesBodySchema = z.object({
+  orderedIds: z.array(z.string().uuid()).min(1),
 });

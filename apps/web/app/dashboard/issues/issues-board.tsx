@@ -4,7 +4,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { IssuesKanban } from "@/app/dashboard/issues/issues-kanban";
 import { authClient } from "@/lib/auth-client";
+import {
+  finalizeOptimisticIssueCreate,
+  issueRowMatchesPmIssuesListFilters,
+  maxIssueNumberAcrossPmIssuesLists,
+  parsePmIssuesListQueryFilters,
+  pickDefaultPmStatus,
+  PM_ISSUES_LIST_QUERY_PREFIX,
+  restorePmIssuesListsSnapshot,
+  snapshotPmIssuesLists,
+  sortIssuesListByUpdatedAtDesc,
+} from "@/lib/pm-issues-cache";
 import { pmJson } from "@/lib/pm-browser";
 import type {
   IssueListRow,
@@ -28,11 +40,15 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 
+type IssuesViewMode = "table" | "board";
+
 export const IssuesBoard = () => {
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
   const activeOrganizationId = session?.session.activeOrganizationId ?? "";
+  const actorUserId = session?.user.id ?? "";
 
+  const [viewMode, setViewMode] = useState<IssuesViewMode>("table");
   const [searchText, setSearchText] = useState("");
   const [statusId, setStatusId] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -90,6 +106,7 @@ export const IssuesBoard = () => {
         labelId,
         assigneeId,
         includeArchived,
+        viewMode,
       },
     ],
     [
@@ -99,6 +116,7 @@ export const IssuesBoard = () => {
       projectId,
       searchText,
       statusId,
+      viewMode,
     ],
   );
 
@@ -124,6 +142,9 @@ export const IssuesBoard = () => {
       if (includeArchived) {
         params.set("includeArchived", "true");
       }
+      if (viewMode === "board") {
+        params.set("limit", "200");
+      }
       const qs = params.toString();
       return pmJson<IssueListRow[]>(`/issues${qs ? `?${qs}` : ""}`);
     },
@@ -137,9 +158,72 @@ export const IssuesBoard = () => {
         body: JSON.stringify({ title }),
       });
     },
-    onSuccess: async () => {
+    onMutate: async (title) => {
+      await queryClient.cancelQueries({
+        queryKey: [...PM_ISSUES_LIST_QUERY_PREFIX],
+      });
+      const prevLists = snapshotPmIssuesLists(queryClient);
+      const statuses =
+        queryClient.getQueryData<PmStatus[]>(["pm", "statuses"]) ?? [];
+      const defaultStatus = pickDefaultPmStatus(statuses);
+      if (!defaultStatus) {
+        return { prevLists, tempId: null as string | null };
+      }
+      const trimmed = title.trim();
+      const tempId = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const nextNumber = maxIssueNumberAcrossPmIssuesLists(queryClient) + 1;
+      const optimistic: IssueListRow = {
+        id: tempId,
+        issueNumber: nextNumber,
+        title: trimmed,
+        description: "",
+        priority: "none",
+        archivedAt: null,
+        createdAt: now,
+        updatedAt: now,
+        createdByUserId: actorUserId,
+        statusId: defaultStatus.id,
+        projectId: null,
+        statusName: defaultStatus.name,
+        statusCategory: defaultStatus.category,
+        projectName: null,
+      };
+      const entries = queryClient.getQueriesData<IssueListRow[]>({
+        queryKey: [...PM_ISSUES_LIST_QUERY_PREFIX],
+      });
+      for (const [key, list] of entries) {
+        if (!list) {
+          continue;
+        }
+        const filters = parsePmIssuesListQueryFilters(key);
+        if (!filters) {
+          continue;
+        }
+        if (!issueRowMatchesPmIssuesListFilters(filters, optimistic)) {
+          continue;
+        }
+        queryClient.setQueryData(
+          key,
+          sortIssuesListByUpdatedAtDesc([optimistic, ...list]),
+        );
+      }
+      return { prevLists, tempId };
+    },
+    onError: (_error, _title, context) => {
+      if (context?.prevLists) {
+        restorePmIssuesListsSnapshot(queryClient, context.prevLists);
+      }
+    },
+    onSuccess: (row, _title, context) => {
       setNewTitle("");
-      await queryClient.invalidateQueries({ queryKey: ["pm", "issues"] });
+      if (context?.tempId) {
+        finalizeOptimisticIssueCreate(queryClient, context.tempId, row);
+        return;
+      }
+      void queryClient.invalidateQueries({
+        queryKey: [...PM_ISSUES_LIST_QUERY_PREFIX],
+      });
     },
   });
 
@@ -195,12 +279,42 @@ export const IssuesBoard = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-heading text-2xl font-medium">Issues</h1>
-        <p className="text-muted-foreground text-sm">
-          Linear-style tracking for your workspace. Keys use{" "}
-          <span className="font-mono text-xs">{slug}</span> and a number.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="font-heading text-2xl font-medium">Issues</h1>
+          <p className="text-muted-foreground text-sm">
+            Linear-style tracking for your workspace. Keys use{" "}
+            <span className="font-mono text-xs">{slug}</span> and a number.
+          </p>
+        </div>
+        <div
+          aria-label="Issues view"
+          className="bg-muted/40 flex w-fit shrink-0 gap-1 rounded-lg border p-1"
+          role="group"
+        >
+          <Button
+            aria-pressed={viewMode === "table"}
+            className="h-8 px-3"
+            onClick={() => {
+              setViewMode("table");
+            }}
+            type="button"
+            variant={viewMode === "table" ? "default" : "ghost"}
+          >
+            Table
+          </Button>
+          <Button
+            aria-pressed={viewMode === "board"}
+            className="h-8 px-3"
+            onClick={() => {
+              setViewMode("board");
+            }}
+            type="button"
+            variant={viewMode === "board" ? "default" : "ghost"}
+          >
+            Board
+          </Button>
+        </div>
       </div>
 
       <section
@@ -402,70 +516,82 @@ export const IssuesBoard = () => {
         </p>
       ) : null}
 
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-            <tr>
-              <th className="px-3 py-2 font-medium">Key</th>
-              <th className="px-3 py-2 font-medium">Title</th>
-              <th className="px-3 py-2 font-medium">Status</th>
-              <th className="px-3 py-2 font-medium">Project</th>
-              <th className="px-3 py-2 font-medium">Priority</th>
-              <th className="px-3 py-2 font-medium">Updated</th>
-            </tr>
-          </thead>
-          <tbody>
-            {issuesQuery.isPending ? (
+      {viewMode === "board" ? (
+        issuesQuery.isPending ? (
+          <p className="text-muted-foreground text-sm">Loading issues…</p>
+        ) : (
+          <IssuesKanban
+            issues={issuesQuery.data ?? []}
+            slug={slug}
+            statuses={statuses}
+          />
+        )
+      ) : (
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
               <tr>
-                <td className="text-muted-foreground px-3 py-4" colSpan={6}>
-                  Loading issues…
-                </td>
+                <th className="px-3 py-2 font-medium">Key</th>
+                <th className="px-3 py-2 font-medium">Title</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">Project</th>
+                <th className="px-3 py-2 font-medium">Priority</th>
+                <th className="px-3 py-2 font-medium">Updated</th>
               </tr>
-            ) : null}
-            {(issuesQuery.data ?? []).map((issue) => (
-              <tr className="border-t" key={issue.id}>
-                <td className="px-3 py-2 font-mono text-xs">
-                  <Link
-                    className="text-primary underline-offset-2 hover:underline"
-                    href={`/dashboard/issues/${issue.id}`}
-                  >
-                    {slug.toUpperCase()}-{issue.issueNumber}
-                  </Link>
-                </td>
-                <td className="px-3 py-2">
-                  <Link
-                    className="font-medium hover:underline"
-                    href={`/dashboard/issues/${issue.id}`}
-                  >
-                    {issue.title}
-                  </Link>
-                  {issue.archivedAt ? (
-                    <span className="text-muted-foreground ms-2 text-xs">
-                      Archived
-                    </span>
-                  ) : null}
-                </td>
-                <td className="px-3 py-2">{issue.statusName}</td>
-                <td className="text-muted-foreground px-3 py-2">
-                  {issue.projectName ?? "—"}
-                </td>
-                <td className="px-3 py-2 capitalize">{issue.priority}</td>
-                <td className="text-muted-foreground px-3 py-2 text-xs">
-                  {new Date(issue.updatedAt).toLocaleString()}
-                </td>
-              </tr>
-            ))}
-            {!issuesQuery.isPending &&
-            (issuesQuery.data ?? []).length === 0 ? (
-              <tr>
-                <td className="text-muted-foreground px-3 py-6" colSpan={6}>
-                  No issues match these filters.
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {issuesQuery.isPending ? (
+                <tr>
+                  <td className="text-muted-foreground px-3 py-4" colSpan={6}>
+                    Loading issues…
+                  </td>
+                </tr>
+              ) : null}
+              {(issuesQuery.data ?? []).map((issue) => (
+                <tr className="border-t" key={issue.id}>
+                  <td className="px-3 py-2 font-mono text-xs">
+                    <Link
+                      className="text-primary underline-offset-2 hover:underline"
+                      href={`/dashboard/issues/${issue.id}`}
+                    >
+                      {slug.toUpperCase()}-{issue.issueNumber}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2">
+                    <Link
+                      className="font-medium hover:underline"
+                      href={`/dashboard/issues/${issue.id}`}
+                    >
+                      {issue.title}
+                    </Link>
+                    {issue.archivedAt ? (
+                      <span className="text-muted-foreground ms-2 text-xs">
+                        Archived
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className="px-3 py-2">{issue.statusName}</td>
+                  <td className="text-muted-foreground px-3 py-2">
+                    {issue.projectName ?? "—"}
+                  </td>
+                  <td className="px-3 py-2 capitalize">{issue.priority}</td>
+                  <td className="text-muted-foreground px-3 py-2 text-xs">
+                    {new Date(issue.updatedAt).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+              {!issuesQuery.isPending &&
+              (issuesQuery.data ?? []).length === 0 ? (
+                <tr>
+                  <td className="text-muted-foreground px-3 py-6" colSpan={6}>
+                    No issues match these filters.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
