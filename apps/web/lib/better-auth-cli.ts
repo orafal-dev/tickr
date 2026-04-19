@@ -1,3 +1,8 @@
+/**
+ * Entry used only by `bun run auth:migrate`. The Better Auth CLI cannot load configs
+ * that transitively import `server-only` (e.g. email modules). Runtime auth stays in
+ * `better-auth-instance.ts`.
+ */
 import { dash, sentinel } from "@better-auth/infra";
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
@@ -9,9 +14,6 @@ import {
   resolveAuthSecret,
   resolveBetterAuthInfraApiKey,
 } from "@/lib/better-auth-env";
-import { sendEmailVerificationMail } from "@/lib/email-verification-mail";
-import { resolvePublicEmailVerificationUrl } from "@/lib/email-verification-url";
-import { sendOrganizationInvitationMail } from "@/lib/organization-invitation-mail";
 import { resolveSocialProvidersConfig } from "@/lib/oauth-providers";
 
 const baseURL = resolveAuthBaseURL();
@@ -38,14 +40,7 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
     expiresIn: 3600 * 24,
-    sendVerificationEmail: async ({ user, url }) => {
-      const confirmUrl = resolvePublicEmailVerificationUrl(url);
-      await sendEmailVerificationMail({
-        to: user.email,
-        subject: "Confirm your email for Tickr",
-        confirmUrl,
-      });
-    },
+    sendVerificationEmail: async () => {},
   },
   socialProviders: resolveSocialProvidersConfig(),
   plugins: [
@@ -57,21 +52,7 @@ export const auth = betterAuth({
       apiKey: betterAuthInfraApiKey,
     }),
     organization({
-      async sendInvitationEmail(data) {
-        const inviteUrl = `${baseURL}/accept-invitation?invitationId=${encodeURIComponent(data.id)}`;
-        const inviterLabel =
-          data.inviter.user.name?.trim() ||
-          data.inviter.user.email ||
-          "Someone";
-        const subject = `Invitation to join ${data.organization.name}`;
-        await sendOrganizationInvitationMail({
-          to: data.email,
-          subject,
-          inviterLabel,
-          organizationName: data.organization.name,
-          inviteUrl,
-        });
-      },
+      async sendInvitationEmail() {},
     }),
   ],
 });

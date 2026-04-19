@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "auth:migrate": "bunx auth@latest migrate --yes --config ./lib/better-auth-instance.ts",
+    "auth:migrate": "bunx auth@latest migrate --yes --config ./lib/better-auth-cli.ts",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
