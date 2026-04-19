@@ -1,7 +1,9 @@
 import Link from "next/link"
 
 import { ProfileResendVerification } from "@/app/dashboard/profile/profile-resend-verification"
+import { ProfileSignInMethods } from "@/app/dashboard/profile/profile-sign-in-methods"
 import { getSession } from "@/lib/auth"
+import { getConfiguredOAuthProviders } from "@/lib/oauth-providers.server"
 import { buttonVariants } from "@workspace/ui/components/button.variants"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -11,6 +13,7 @@ export default async function ProfilePage() {
     return null
   }
 
+  const oauthProviders = getConfiguredOAuthProviders()
   const emailVerified = Boolean(session.user.emailVerified)
 
   return (
@@ -18,7 +21,7 @@ export default async function ProfilePage() {
       <div className="flex flex-col gap-1">
         <h1 className="font-heading text-2xl font-medium">Profile</h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Account details and email confirmation.
+          Account details, sign-in methods, and email confirmation.
         </p>
       </div>
       <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
@@ -51,6 +54,7 @@ export default async function ProfilePage() {
           />
         ) : null}
       </div>
+      <ProfileSignInMethods configuredProviders={oauthProviders} />
       <Link
         className={cn(buttonVariants({ variant: "outline" }), "w-fit")}
         href="/dashboard"

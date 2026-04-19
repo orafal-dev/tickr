@@ -21,6 +21,11 @@ export const auth = betterAuth({
   baseURL,
   secret: resolveAuthSecret(),
   database: authDatabasePool,
+  account: {
+    accountLinking: {
+      enabled: true,
+    },
+  },
   rateLimit: {
     enabled: true,
     customRules: {
