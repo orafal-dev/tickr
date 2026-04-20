@@ -132,7 +132,7 @@ Report security-sensitive bugs privately to the maintainers once a security poli
 
 ## License
 
-Add a `LICENSE` file at the repository root before publishing (for example MIT or Apache-2.0). Until then, treat usage terms as undefined—this README describes intent to distribute Tickr as open source; the actual grant of rights comes from the license file you choose.
+Tickr is released under the [MIT License](LICENSE).
 
 ---
 
