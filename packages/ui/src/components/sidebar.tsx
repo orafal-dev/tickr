@@ -33,6 +33,46 @@ const SIDEBAR_WIDTH_MOBILE: string = "18rem"
 const SIDEBAR_WIDTH_ICON: string = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT: string = "b"
 
+const INPUT_TYPES_WITHOUT_TEXT_EDITING: ReadonlySet<string> = new Set([
+  "button",
+  "checkbox",
+  "color",
+  "file",
+  "hidden",
+  "image",
+  "radio",
+  "range",
+  "reset",
+  "submit",
+])
+
+const isSidebarToggleDeferredForTextEditing = (
+  target: EventTarget | null
+): boolean => {
+  const node = target instanceof Node ? target : null
+  if (!node) {
+    return false
+  }
+  const element = node instanceof Element ? node : node.parentElement
+  if (!element) {
+    return false
+  }
+  if (element.closest(".ProseMirror")) {
+    return true
+  }
+  if (element instanceof HTMLElement && element.isContentEditable) {
+    return true
+  }
+  if (element.tagName === "TEXTAREA" || element.tagName === "SELECT") {
+    return true
+  }
+  if (element.tagName !== "INPUT") {
+    return false
+  }
+  const type = (element as HTMLInputElement).type?.toLowerCase() ?? "text"
+  return !INPUT_TYPES_WITHOUT_TEXT_EDITING.has(type)
+}
+
 export const sidebarMenuButtonVariants = cva(
   "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-lg p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pe-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:shrink-0 [&>svg:not([class*='size-'])]:size-4",
   {
@@ -126,12 +166,16 @@ export function SidebarProvider({
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (
-        event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
-        (event.metaKey || event.ctrlKey)
+        event.key.toLowerCase() !== SIDEBAR_KEYBOARD_SHORTCUT ||
+        !(event.metaKey || event.ctrlKey)
       ) {
-        event.preventDefault()
-        toggleSidebar()
+        return
       }
+      if (isSidebarToggleDeferredForTextEditing(event.target)) {
+        return
+      }
+      event.preventDefault()
+      toggleSidebar()
     }
 
     window.addEventListener("keydown", handleKeyDown)
