@@ -39,7 +39,7 @@ const isItemActive = (pathname: string, item: NavMainItem): boolean => {
 
 export const NavMain = ({
   items,
-  groupLabel = "Workspace",
+  groupLabel,
 }: {
   items: NavMainItem[]
   groupLabel?: string
@@ -48,7 +48,9 @@ export const NavMain = ({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>
+      {groupLabel ? (
+        <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>
+      ) : null}
       <SidebarMenu>
         {items.map((item) => {
           const hasSubItems = Boolean(item.items?.length)
