@@ -6,7 +6,12 @@ import type { NavMainItem } from "@/components/nav-main.types"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { OrgSwitcher } from "@/components/org-switcher"
-import { Folder01Icon, LabelIcon, LayoutTwoColumnIcon } from "@hugeicons/core-free-icons"
+import {
+  Building02Icon,
+  Folder01Icon,
+  LabelIcon,
+  LayoutTwoColumnIcon,
+} from "@hugeicons/core-free-icons"
 import {
   Sidebar,
   SidebarContent,
@@ -30,6 +35,11 @@ const navMain: NavMainItem[] = [
     title: "Labels",
     url: "/dashboard/labels",
     icon: <UiIcon aria-hidden icon={LabelIcon} />,
+  },
+  {
+    title: "Workspace",
+    url: "/dashboard/organization",
+    icon: <UiIcon aria-hidden icon={Building02Icon} />,
   },
 ]
 
