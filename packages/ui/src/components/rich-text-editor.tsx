@@ -1,5 +1,6 @@
 "use client"
 
+import { BubbleMenu } from "@tiptap/react/menus"
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react"
 import type { Editor, JSONContent } from "@tiptap/core"
 import {
@@ -69,7 +70,10 @@ const RichTextEditorToolbar = ({
 
   return (
     <div
-      className="flex flex-wrap gap-1 border-b border-input bg-muted/40 p-1.5"
+      className="flex flex-wrap items-center gap-0.5"
+      onMouseDown={(event) => {
+        event.preventDefault()
+      }}
       role="toolbar"
     >
       <Button
@@ -80,7 +84,7 @@ const RichTextEditorToolbar = ({
         onClick={handleBold}
         size="icon-sm"
         type="button"
-        variant={bold ? "secondary" : "outline"}
+        variant={bold ? "secondary" : "ghost"}
       >
         <UiIcon aria-hidden className="size-4" icon={TextBoldIcon} />
       </Button>
@@ -92,7 +96,7 @@ const RichTextEditorToolbar = ({
         onClick={handleItalic}
         size="icon-sm"
         type="button"
-        variant={italic ? "secondary" : "outline"}
+        variant={italic ? "secondary" : "ghost"}
       >
         <UiIcon aria-hidden className="size-4" icon={TextItalicIcon} />
       </Button>
@@ -104,7 +108,7 @@ const RichTextEditorToolbar = ({
         onClick={handleHeading}
         size="icon-sm"
         type="button"
-        variant={h2 ? "secondary" : "outline"}
+        variant={h2 ? "secondary" : "ghost"}
       >
         <UiIcon aria-hidden className="size-4" icon={Heading02Icon} />
       </Button>
@@ -116,7 +120,7 @@ const RichTextEditorToolbar = ({
         onClick={handleBulletList}
         size="icon-sm"
         type="button"
-        variant={bullet ? "secondary" : "outline"}
+        variant={bullet ? "secondary" : "ghost"}
       >
         <UiIcon
           aria-hidden
@@ -132,7 +136,7 @@ const RichTextEditorToolbar = ({
         onClick={handleOrderedList}
         size="icon-sm"
         type="button"
-        variant={ordered ? "secondary" : "outline"}
+        variant={ordered ? "secondary" : "ghost"}
       >
         <UiIcon
           aria-hidden
@@ -148,6 +152,7 @@ export const RichTextEditor = ({
   value,
   onChange,
   disabled = false,
+  variant = "frameless",
   "aria-label": ariaLabel,
   id,
   className,
@@ -165,8 +170,10 @@ export const RichTextEditor = ({
         attributes: {
           ...(id ? { id } : {}),
           class: cn(
-            "box-border min-h-[5lh] w-full overflow-hidden py-[calc(theme(spacing.1.5)-1px)] leading-relaxed outline-none",
-            "px-[calc(theme(spacing.3)-1px)]",
+            "box-border min-h-[4lh] w-full overflow-hidden leading-relaxed outline-none",
+            variant === "bordered"
+              ? "px-[calc(theme(spacing.3)-1px)] py-[calc(theme(spacing.1.5)-1px)]"
+              : "px-0 py-1",
             "[&_h2]:my-2 [&_h2]:text-base [&_h2]:font-semibold [&_p]:my-1",
             "[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5",
             "[&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5",
@@ -181,7 +188,7 @@ export const RichTextEditor = ({
         onChange(serializeRichTextDoc(instance.getJSON()))
       },
     },
-    []
+    [variant]
   )
 
   useEffect(() => {
@@ -260,7 +267,9 @@ export const RichTextEditor = ({
         aria-busy="true"
         aria-label={ariaLabel ?? "Loading rich text editor"}
         className={cn(
-          "min-h-40 w-full rounded-lg border border-input bg-muted/20",
+          "min-h-[4lh] w-full",
+          variant === "bordered" &&
+            "rounded-lg border border-input bg-muted/20",
           className
         )}
       />
@@ -270,12 +279,28 @@ export const RichTextEditor = ({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden rounded-lg border border-input bg-background text-base text-foreground shadow-xs/5 ring-ring/24 transition-shadow not-dark:bg-clip-padding before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] focus-within:border-ring focus-within:ring-[3px] sm:text-sm dark:bg-input/32 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+        "relative w-full text-base text-foreground sm:text-sm",
+        variant === "bordered" &&
+          "overflow-hidden rounded-lg border border-input bg-background shadow-xs/5 ring-ring/24 transition-shadow not-dark:bg-clip-padding before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] focus-within:border-ring focus-within:ring-[3px] dark:bg-input/32 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
         disabled && "opacity-64",
         className
       )}
     >
-      <RichTextEditorToolbar disabled={disabled} editor={editor} />
+      <BubbleMenu
+        className="z-50 flex rounded-lg border border-border/60 bg-popover/95 px-1 py-1 shadow-lg backdrop-blur-sm"
+        editor={editor}
+        options={{
+          placement: "top",
+          offset: 8,
+        }}
+        shouldShow={({ editor: menuEditor }) =>
+          !disabled &&
+          menuEditor.isEditable &&
+          !menuEditor.state.selection.empty
+        }
+      >
+        <RichTextEditorToolbar disabled={disabled} editor={editor} />
+      </BubbleMenu>
       <div className="w-full min-w-0" ref={editorContentWrapRef}>
         <EditorContent
           className={cn(disabled && "pointer-events-none")}
