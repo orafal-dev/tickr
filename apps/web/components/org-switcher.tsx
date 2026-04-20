@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { authClient } from "@/lib/auth-client"
+import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import {
   Menu,
   MenuGroup,
@@ -106,6 +107,10 @@ export const OrgSwitcher = () => {
   )
 
   const selectValue = activeOrganizationId || organizationOptions[0]?.id || ""
+  const activeOrganization =
+    organizationOptions.find((organization) => organization.id === selectValue) ??
+    organizationOptions[0]
+  const activeOrganizationName = activeOrganization?.name ?? "Workspace"
 
   if (sessionPending || organizations.isPending) {
     return (
@@ -178,15 +183,14 @@ export const OrgSwitcher = () => {
             nativeButton
             type="button"
           >
-            <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary font-heading text-sm font-semibold text-sidebar-primary-foreground">
-              T
-            </div>
-            <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">Tickr</span>
-              <span className="truncate text-xs text-muted-foreground">
-                Dashboard
-              </span>
-            </div>
+            <Avatar className="size-8 rounded-lg">
+              <AvatarFallback className="rounded-lg bg-sidebar-primary font-heading text-sm font-semibold text-sidebar-primary-foreground">
+                {organizationInitial(activeOrganizationName)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="min-w-0 flex-1 truncate text-left text-sm font-medium leading-tight">
+              {activeOrganizationName}
+            </span>
             <UiIcon
               aria-hidden
               className="ml-auto size-4 shrink-0 opacity-50"
