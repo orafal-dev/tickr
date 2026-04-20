@@ -724,6 +724,7 @@ export const IssueDetail = () => {
               disabled={addCommentMutation.isPending}
               onChange={setCommentBody}
               value={commentBody}
+              variant="bordered"
             />
           </Field>
           <Button
