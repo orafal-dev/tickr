@@ -1,3 +1,6 @@
+# Coolify: assign domains to `web` and `api` in the UI (proxy reaches these via the
+# Docker network). Avoid publishing fixed host ports here — they conflict on shared hosts
+# and bypass the proxy. For localhost access, use docker-compose.local.yaml (see file).
 services:
   setup:
     image: oven/bun:1.3.10-alpine
@@ -14,8 +17,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: tickr
-    ports:
-      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -34,8 +35,8 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/tickr
       API_PORT: "3001"
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"
     depends_on:
       setup:
         condition: service_completed_successfully
@@ -53,10 +54,11 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/tickr
       API_URL: http://api:3001
       USESEND_BASE_URL: https://usesend-wcw0o04ckwss04wwwkwo0kok.botox.boo
-      BETTER_AUTH_URL: http://localhost:3000
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
-    ports:
-      - "3000:3000"
+      # Coolify injects SERVICE_URL_WEB when the `web` service has a domain configured.
+      BETTER_AUTH_URL: ${SERVICE_URL_WEB:-http://localhost:3000}
+      NEXT_PUBLIC_APP_URL: ${SERVICE_URL_WEB:-http://localhost:3000}
+    expose:
+      - "3000"
     depends_on:
       setup:
         condition: service_completed_successfully
