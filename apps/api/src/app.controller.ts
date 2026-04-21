@@ -10,6 +10,11 @@ export class AppController {
     return this.appService.getHello()
   }
 
+  @Get("health")
+  getHealth(): { readonly ok: true } {
+    return { ok: true }
+  }
+
   @Get("admin/test")
   getAdminTest(): { readonly ok: true } {
     return { ok: true }
