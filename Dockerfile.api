@@ -16,6 +16,8 @@ COPY --from=pruner /app/out/bun.lock bun.lock
 RUN bun install
 COPY --from=pruner /app/out/full/ .
 RUN bun run turbo build --filter=api
+# Drop devDependencies so the runner layer is small (full monorepo node_modules OOMs / fails unpack on small Coolify disks).
+RUN bun install --production && rm -rf /app/node_modules/.cache /app/apps/api/src
 
 FROM oven/bun:1.3-slim AS runner
 WORKDIR /app/apps/api

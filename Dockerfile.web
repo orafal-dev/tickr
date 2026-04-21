@@ -17,8 +17,9 @@ COPY --from=pruner /app/out/bun.lock bun.lock
 RUN bun install
 COPY --from=pruner /app/out/full/ .
 # Raise heap for Next.js compile; if the Docker builder still gets SIGKILL, allocate more RAM/swap to Docker.
-ENV NODE_OPTIONS=--max-old-space-size=4096
+ENV NODE_OPTIONS=--max-old-space-size=6144
 RUN bun run turbo build --filter=web
+RUN rm -rf /app/apps/web/.next/cache
 
 FROM node:20-alpine AS runner
 WORKDIR /app
