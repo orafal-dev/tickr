@@ -1,10 +1,12 @@
-# Coolify: assign domains to `web` and `api` in the UI (proxy reaches these via the
-# Docker network). Avoid publishing fixed host ports here — they conflict on shared hosts
-# and bypass the proxy. For localhost access, use docker-compose.local.yaml (see file).
+# Coolify: attach domains to `web` and `api` in the UI (traffic reaches them on the Docker
+# network). Avoid fixed host `ports:` here — they collide on shared hosts and bypass the proxy.
+# For localhost, add: `-f docker-compose.local.yaml`.
 #
-# Install deps into named volumes under node_modules (not the bind-mounted repo tree).
-# Writing thousands of small files to a macOS/Windows bind mount is very slow and often
-# looks "stuck"; native volumes complete in a reasonable time.
+# First deploy can look "stuck" on `setup` while `bun install` fills named volumes; Postgres
+# may become healthy long before install finishes. Watch logs for the `setup` service.
+#
+# Named `node_modules` volumes keep installs off the bind-mounted repo (very slow on macOS).
+
 x-workspace-volumes: &workspace-volumes
   - .:/workspace
   - bun-cache:/root/.bun/install/cache
@@ -15,14 +17,23 @@ x-workspace-volumes: &workspace-volumes
   - node-modules-eslint:/workspace/packages/eslint-config/node_modules
   - node-modules-transactional:/workspace/packages/transactional/node_modules
 
+x-bun-service: &bun-service
+  image: oven/bun:1.3.10-alpine
+  working_dir: /workspace
+  volumes: *workspace-volumes
+
 services:
   setup:
-    image: oven/bun:1.3.10-alpine
-    working_dir: /workspace
+    <<: *bun-service
     environment:
       CI: "true"
-    command: ["sh", "-ec", "bun install --frozen-lockfile"]
-    volumes: *workspace-volumes
+    command:
+      - sh
+      - -ec
+      - |
+        echo "[setup] bun install --frozen-lockfile (first run can take several minutes)"
+        bun install --frozen-lockfile
+        echo "[setup] finished"
 
   postgres:
     image: postgres:16-alpine
@@ -40,8 +51,8 @@ services:
       retries: 10
 
   api:
-    image: oven/bun:1.3.10-alpine
-    working_dir: /workspace
+    <<: *bun-service
+    init: true
     command: bun run --cwd apps/api dev
     restart: unless-stopped
     env_file:
@@ -51,7 +62,6 @@ services:
       API_PORT: "3001"
     expose:
       - "3001"
-    volumes: *workspace-volumes
     depends_on:
       setup:
         condition: service_completed_successfully
@@ -59,9 +69,15 @@ services:
         condition: service_healthy
 
   web:
-    image: oven/bun:1.3.10-alpine
-    working_dir: /workspace
-    command: bun run --cwd apps/web dev -- --hostname 0.0.0.0 --port 3000
+    <<: *bun-service
+    init: true
+    # Larger /dev/shm avoids intermittent Next/webpack dev crashes under small defaults.
+    shm_size: "1gb"
+    # Webpack dev uses less RAM than Turbopack; Turbopack often OOM-restarts in Docker Desktop.
+    command:
+      - sh
+      - -ec
+      - exec ./apps/web/node_modules/.bin/next dev apps/web --webpack --hostname 0.0.0.0 --port 3000
     restart: unless-stopped
     env_file:
       - apps/web/.env
@@ -69,12 +85,10 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/tickr
       API_URL: http://api:3001
       USESEND_BASE_URL: https://usesend-wcw0o04ckwss04wwwkwo0kok.botox.boo
-      # Coolify injects SERVICE_URL_WEB when the `web` service has a domain configured.
       BETTER_AUTH_URL: ${SERVICE_URL_WEB:-http://localhost:3000}
       NEXT_PUBLIC_APP_URL: ${SERVICE_URL_WEB:-http://localhost:3000}
     expose:
       - "3000"
-    volumes: *workspace-volumes
     depends_on:
       setup:
         condition: service_completed_successfully
