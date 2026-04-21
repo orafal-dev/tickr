@@ -36,6 +36,7 @@ const parseListenPort = (): number =>
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
-  await app.listen(parseListenPort())
+  const port = parseListenPort()
+  await app.listen(port, "0.0.0.0")
 }
 bootstrap()

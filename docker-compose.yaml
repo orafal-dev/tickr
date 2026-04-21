@@ -45,7 +45,13 @@ services:
     environment:
       NODE_ENV: production
       API_PORT: "3001"
-      DATABASE_URL: postgresql://${POSTGRES_USER:-tickr}:${POSTGRES_PASSWORD:-tickr_dev_insecure_postgres_password}@postgres:5432/${POSTGRES_DB:-tickr}
+      # Prefer PG_* so passwords with @, &, etc. never break a postgresql:// URL. Optional DATABASE_URL override.
+      DATABASE_URL: ${API_DATABASE_URL:-}
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:-tickr}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-tickr_dev_insecure_postgres_password}
+      PGDATABASE: ${POSTGRES_DB:-tickr}
       API_INTERNAL_KEY: ${API_INTERNAL_KEY:-local-development-api-internal-key}
     depends_on:
       postgres:
@@ -53,13 +59,15 @@ services:
     healthcheck:
       test:
         [
-          "CMD-SHELL",
-          "bun -e \"fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+          "CMD",
+          "bun",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
-      interval: 15s
+      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 8
+      start_period: 45s
 
   web:
     build:
@@ -72,6 +80,7 @@ services:
       NODE_ENV: production
       PORT: "3000"
       HOSTNAME: 0.0.0.0
+      # If POSTGRES_PASSWORD contains URL metacharacters (@, &, #, …), set DATABASE_URL in Coolify to a percent-encoded postgresql://… value (Better Auth needs a URL string).
       DATABASE_URL: postgresql://${POSTGRES_USER:-tickr}:${POSTGRES_PASSWORD:-tickr_dev_insecure_postgres_password}@postgres:5432/${POSTGRES_DB:-tickr}
       API_URL: http://api:3001
       API_INTERNAL_KEY: ${API_INTERNAL_KEY:-local-development-api-internal-key}
