@@ -13,6 +13,8 @@
     "API_URL",
     "SMTP_FROM",
     "SMTP_HOST",
+    "USESEND_API_KEY",
+    "USESEND_BASE_URL",
     "SMTP_PASSWORD",
     "SMTP_PORT",
     "SMTP_USER"
