@@ -12,8 +12,6 @@
 # `postgres`, point `DATABASE_URL` at your external database, and drop
 # `depends_on` conditions that reference `postgres`.
 
-name: tickr
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -45,8 +43,8 @@ services:
     environment:
       NODE_ENV: production
       API_PORT: "3001"
-      # Prefer PG_* so passwords with @, &, etc. never break a postgresql:// URL. Optional DATABASE_URL override.
-      DATABASE_URL: ${API_DATABASE_URL:-}
+      # API reads PG_* first (see apps/api database module). Optional: set API_DATABASE_URL in Coolify for sslmode=… etc.
+      API_DATABASE_URL: ${API_DATABASE_URL:-}
       PGHOST: postgres
       PGPORT: "5432"
       PGUSER: ${POSTGRES_USER:-tickr}
